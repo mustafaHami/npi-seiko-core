@@ -1,0 +1,39 @@
+services:
+  database:
+    image: postgres:16.2-alpine
+    container_name: planning-database
+    volumes:
+      - "D:/postgres_container_data:/var/lib/postgresql/data"
+    ports:
+      - 5444:5432
+    networks:
+      - planning-network
+    environment:
+      - POSTGRES_PASSWORD=planning
+      - POSTGRES_USER=planning
+      - POSTGRES_DB=planning
+    restart: always
+  core:
+    image: planning-core-image:1.0.0
+    container_name: planning-core
+    ports:
+      - 9091:80
+    networks:
+      - planning-network
+    restart: unless-stopped
+    depends_on:
+      - database
+  web:
+    image: planning-front-image:1.0.0
+    container_name: planning-web
+    volumes:
+      - "/opt/work/config/lighttpd.conf:/etc/lighttpd/lighttpd.conf"
+    ports:
+      - 4501:80
+    networks:
+      - planning-network
+    restart: unless-stopped
+    depends_on:
+      - core
+networks:
+  planning-network:

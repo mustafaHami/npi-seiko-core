@@ -1,1 +1,1 @@
-# npi-seiko-core
+# cost-seiko-core

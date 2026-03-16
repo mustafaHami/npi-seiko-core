@@ -1,0 +1,34 @@
+###
+POST http://localhost:9090/public/login
+Content-Type: application/json
+
+{
+  "login": "superadmin@fortestonly.lokal",
+  "password": "..."
+}
+
+###
+POST http://localhost:9090/hidden/license?activeUsersLimit=10
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+###
+POST http://localhost:9090/users/username
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "username": "a",
+  "password": "a",
+  "role": "SUPER_ADMINISTRATOR"
+}
+
+###
+POST http://localhost:9090/users/email
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "email": "cost2@yopmail.com",
+  "role": "SUPPLY_CHAIN_FABRICATION"
+}
