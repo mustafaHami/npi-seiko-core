@@ -13,6 +13,8 @@ import java.util.List;
 
 public interface NpiOrderRepository extends JpaRepository<NpiOrderEntity, UUID> {
 
+  List<NpiOrderEntity> findAllByArchivedFalse();
+
   @Query(
       """
           SELECT n FROM NpiOrderEntity n

@@ -27,6 +27,7 @@ import my.lokalix.planning.core.repositories.ProcessLineStatusHistoryRepository;
 import my.lokalix.planning.core.repositories.ProcessRepository;
 import my.lokalix.planning.core.security.LoggedUserDetailsService;
 import my.lokalix.planning.core.services.helper.EntityRetrievalHelper;
+import my.lokalix.planning.core.services.helper.NpiForecastHelper;
 import my.lokalix.planning.core.services.validator.NpiValidator;
 import my.lokalix.planning.core.services.validator.ProcessLineValidator;
 import my.lokalix.planning.core.utils.ExcelUtils;
@@ -60,6 +61,7 @@ public class NpiOrderService {
   private final AppConfigurationProperties appConfigurationProperties;
   private final NpiValidator npiValidator;
   private final LoggedUserDetailsService loggedUserDetailsService;
+  private final NpiForecastHelper npiForecastHelper;
 
   @Transactional
   public SWNpiOrder createNpiOrder(SWNpiOrderCreate body) {
@@ -193,7 +195,7 @@ public class NpiOrderService {
         loggedUserDetailsService.getLoggedUserReference());
     processLineRepository.save(line);
     resetFollowingLinesToDefaultState(npiOrder, line);
-    recalculateForecastDeliveryDate(npiOrder, line);
+    npiForecastHelper.recalculateForecastDeliveryDate(npiOrder);
 
     npiOrderRepository.save(npiOrder);
     if (!newStatus.equals(ProcessLineStatus.ABORTED)) {
@@ -279,40 +281,6 @@ public class NpiOrderService {
     return null;
   }
 
-  private void recalculateForecastDeliveryDate(
-      NpiOrderEntity npiOrder, ProcessLineEntity updatedLine) {
-
-    List<ProcessLineEntity> allLines =
-        processLineRepository.findAllByNpiOrderOrderByIndexIdAsc(npiOrder);
-
-    LocalDate today = TimeUtils.nowLocalDate(appConfigurationProperties.getAppTimezone());
-    final double hoursPerDay = 24.0;
-
-    double totalForecastHours = 0;
-    for (ProcessLineEntity l : allLines) {
-      boolean isCurrentLine = l.getProcessLineId().equals(updatedLine.getProcessLineId());
-      ProcessLineStatus status = isCurrentLine ? updatedLine.getStatus() : l.getStatus();
-      BigDecimal remainingTimeInHours =
-          isCurrentLine ? updatedLine.getRemainingTimeInHours() : l.getRemainingTimeInHours();
-      BigDecimal planTimeInHours = l.getPlanTimeInHours();
-
-      if (status == ProcessLineStatus.IN_PROGRESS) {
-        if (planTimeInHours != null) {
-          totalForecastHours += planTimeInHours.doubleValue();
-        }
-        if (remainingTimeInHours != null) {
-          totalForecastHours += remainingTimeInHours.doubleValue();
-        }
-      } else if (status == ProcessLineStatus.NOT_STARTED && planTimeInHours != null) {
-        totalForecastHours += planTimeInHours.doubleValue();
-      }
-    }
-
-    long forecastDays = (long) Math.ceil(totalForecastHours / hoursPerDay);
-    npiOrder.setForecastDeliveryDate(today.plusDays(forecastDays));
-    npiOrderRepository.save(npiOrder);
-  }
-
   private void resetFollowingLinesToDefaultState(
       NpiOrderEntity npiOrder, ProcessLineEntity referenceLine) {
     List<ProcessLineEntity> allLines =
@@ -374,7 +342,9 @@ public class NpiOrderService {
         || (previousRemainingTimeInHours != null
             && body.getRemainingTimeInHours() != null
             && previousRemainingTimeInHours.compareTo(body.getRemainingTimeInHours()) != 0)) {
-      recalculateForecastDeliveryDate(npiOrder, line);
+      processLineRepository.save(line);
+      npiForecastHelper.recalculateForecastDeliveryDate(npiOrder);
+      return processLineMapper.toSWProcessLine(line);
     }
     return processLineMapper.toSWProcessLine(processLineRepository.save(line));
   }
