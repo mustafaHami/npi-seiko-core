@@ -29,6 +29,31 @@ public class ProcessLineValidator {
         throw new GenericWithMessageException(
             "Latest delivery date is required to start this step", SWCustomErrorCode.GENERIC_ERROR);
       }
+      if (line.getIsCustomerApproval() && body.getStartingCustomerApprovalDate() == null) {
+        throw new GenericWithMessageException(
+            "Starting customer approval date is required to start this step",
+            SWCustomErrorCode.GENERIC_ERROR);
+      }
+    }
+    if (newStatus == ProcessLineStatus.COMPLETED
+        && line.getStatus().equals(ProcessLineStatus.NOT_STARTED)
+        && line.getIsCustomerApproval()) {
+      throw new GenericWithMessageException(
+          "Customer approval cannot be completed before it is started",
+          SWCustomErrorCode.GENERIC_ERROR);
+    }
+    if (newStatus == ProcessLineStatus.COMPLETED
+        && line.getIsCustomerApproval()
+        && body.getApprovalCustomerDate() == null) {
+      throw new GenericWithMessageException(
+          "Approval customer date is required to complete this step",
+          SWCustomErrorCode.GENERIC_ERROR);
+    }
+    if ((line.getIsMaterialPurchase() || line.getIsCustomerApproval())
+        && newStatus == ProcessLineStatus.COMPLETED
+        && line.getStatus().equals(ProcessLineStatus.NOT_STARTED)) {
+      throw new GenericWithMessageException(
+          "Cannot complete a step that is not in progress", SWCustomErrorCode.GENERIC_ERROR);
     }
   }
 }

@@ -84,7 +84,9 @@ public class ProcessLineEntity {
 
   private LocalDate shippingDate;
 
-  private LocalDate customerApprovalDate;
+  private LocalDate startingCustomerApprovalDate;
+
+  private LocalDate approvalCustomerDate;
 
   @Column(nullable = false, name = "index_id")
   private int indexId;

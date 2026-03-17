@@ -7,7 +7,8 @@ public enum ProcessLineStatus {
 
   IN_PROGRESS("IN_PROGRESS", "In Progress"),
 
-  COMPLETED("COMPLETED", "Completed");
+  COMPLETED("COMPLETED", "Completed"),
+  ABORTED("ABORTed", "Aborted");
 
   private final String value;
   @Getter private final String humanReadableValue;
@@ -36,6 +37,6 @@ public enum ProcessLineStatus {
   }
 
   public boolean isFinalStatus() {
-    return this.equals(COMPLETED);
+    return this.equals(COMPLETED) || this.equals(ABORTED);
   }
 }

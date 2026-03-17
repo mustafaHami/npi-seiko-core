@@ -155,17 +155,29 @@ public class NpiOrderService {
       if (line.getIsMaterialPurchase()) {
         line.setMaterialLatestDeliveryDate(body.getMaterialLatestDeliveryDate());
       }
+      if (line.getIsCustomerApproval()) {
+        if (body.getStartingCustomerApprovalDate() == null) {
+          throw new IllegalArgumentException(
+              "Starting customer approval date cannot be null for in progress customer approval lines");
+        }
+        line.setStartingCustomerApprovalDate(body.getStartingCustomerApprovalDate());
+      }
       if (line.getIsProduction() || line.getIsTesting()) {
         line.setRemainingTimeInHours(body.getRemainingTimeInHours());
       }
     }
 
-    if (newStatus == ProcessLineStatus.COMPLETED && line.getIsShipment()) {
-      if (body.getShippingDate() == null) {
+    if (newStatus == ProcessLineStatus.COMPLETED) {
+      if (line.getIsShipment() && body.getShippingDate() == null) {
         throw new IllegalArgumentException(
             "Shipping date cannot be null for completed shipment lines");
       }
       line.setShippingDate(body.getShippingDate());
+      if (line.getIsCustomerApproval() && body.getApprovalCustomerDate() == null) {
+        throw new IllegalArgumentException(
+            "Approval customer date cannot be null for completed customer approval lines");
+      }
+      line.setApprovalCustomerDate(body.getApprovalCustomerDate());
     }
 
     line.addStatus(
@@ -178,7 +190,9 @@ public class NpiOrderService {
     recalculateForecastDeliveryDate(npiOrder, line);
 
     npiOrderRepository.save(npiOrder);
-    npiOrder.checkIfAllLinesIsCompleted();
+    if (!newStatus.equals(ProcessLineStatus.ABORTED)) {
+      npiOrder.checkIfAllLinesIsCompleted();
+    }
 
     return processLineMapper.toListSWProcessLine(npiOrder.getProcessLines());
   }
@@ -322,7 +336,8 @@ public class NpiOrderService {
       line.setShippingDate(null);
     }
     if (line.getIsCustomerApproval()) {
-      line.setCustomerApprovalDate(null);
+      line.setStartingCustomerApprovalDate(null);
+      line.setApprovalCustomerDate(null);
     }
   }
 

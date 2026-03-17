@@ -1269,7 +1269,10 @@ components:
         shippingDate:
           type: string
           format: date
-        customerApprovalDate:
+        startingCustomerApprovalDate:
+          type: string
+          format: date
+        approvalCustomerDate:
           type: string
           format: date
         remainingTimeInHours:
@@ -1311,7 +1314,10 @@ components:
         shippingDate:
           type: string
           format: date
-        customerApprovalDate:
+        startingCustomerApprovalDate:
+          type: string
+          format: date
+        approvalCustomerDate:
           type: string
           format: date
         planTimeInHours:
@@ -1514,6 +1520,7 @@ components:
         - NOT_STARTED
         - IN_PROGRESS
         - COMPLETED
+        - ABORTED
     CustomError:
       type: object
       required:
