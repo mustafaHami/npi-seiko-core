@@ -1,0 +1,1442 @@
+openapi: 3.0.3
+info:
+  title: NPI seiko
+  description: |-
+    NPI Seiko API
+  contact:
+    email: khalil@lokalix-solutions.com
+  version: 1.0.0
+servers:
+  - url: http://localhost:9090
+tags:
+  - name: public
+    description: Everything about Public APIs
+  - name: npi-order
+    description: Everything about NPI Order APIs
+  - name: dashboard
+    description: Everything about Dashboard
+  - name: user
+    description: Everything about User APIs
+  - name: files
+    description: Everything about Files APIs
+paths:
+  /dashboard:
+    get:
+      tags:
+        - dashboard
+      summary: retrieve dashboard data
+      operationId: retrieveDashboard
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedRequest'
+        '403':
+          $ref: '#/components/responses/ForbiddenRequest'
+  /temporary-files/upload:
+    post:
+      tags:
+        - files
+      summary: upload a files for save in server
+      operationId: uploadFilesForSave
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UploadFiles"
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FileInfo"
+  /temporary-files/delete:
+    post:
+      tags:
+        - files
+      summary: delete saved file in server
+      operationId: deleteFilesForSave
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Uid"
+      responses:
+        '200':
+          description: Successful operation
+  /temporary-files/download:
+    post:
+      tags:
+        - files
+      summary: download saved file in server
+      operationId: downloadFilesForSave
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Uid"
+      responses:
+        '200':
+          description: Successful operation
+  /public/login:
+    post:
+      tags:
+        - public
+      summary: Login user
+      operationId: loginUser
+      requestBody:
+        description: Login details
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginDetails'
+        required: true
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoggedUser'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /public/app/login:
+    post:
+      tags:
+        - public
+      summary: Login user from android app
+      operationId: loginUserFromAndroidApp
+      requestBody:
+        description: Login details
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginDetails'
+        required: true
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoggedUser'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /public/forgot-password:
+    post:
+      tags:
+        - public
+      summary: user forgot password
+      operationId: forgotPasswordUser
+      requestBody:
+        description: User forgot password details
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserForgotPassword'
+        required: true
+      responses:
+        '200':
+          description: successful operation
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /public/reset-password:
+    post:
+      tags:
+        - public
+      summary: user reset password
+      operationId: resetPasswordUser
+      requestBody:
+        description: User reset password details
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserResetPassword'
+        required: true
+      responses:
+        '200':
+          description: successful operation
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /public/set-first-password:
+    post:
+      tags:
+        - public
+      summary: user set first password
+      operationId: setFirstPasswordUser
+      requestBody:
+        description: User reset password details
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserResetPassword'
+        required: true
+      responses:
+        '200':
+          description: successful operation
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /users/logout:
+    post:
+      tags:
+        - user
+      summary: Logout user
+      operationId: logoutUser
+      responses:
+        '200':
+          description: successful operation user logged out
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /users/search:
+    post:
+      tags:
+        - user
+      summary: |
+        Search users with filter:
+        - freetext looking at email/username
+        - active yes/no
+        Return paginated data ordered alphabetically
+      operationId: searchUsers
+      parameters:
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/activeFilterParam'
+      requestBody:
+        description: search users
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BasicSearch'
+        required: true
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsersPaginated"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedRequest'
+        '403':
+          $ref: '#/components/responses/ForbiddenRequest'
+  /users/check-license-validity:
+    get:
+      tags:
+        - user
+      summary: |
+        Check that licenses are valid for user creation
+      operationId: checkLicenseValidity
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserLicenseValid"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedRequest'
+        '403':
+          $ref: '#/components/responses/ForbiddenRequest'
+  /users/{uid}:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    get:
+      tags:
+        - user
+      summary: Retrieve a new user
+      operationId: retrieveUser
+      responses:
+        '200':
+          description: user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedRequest'
+        '403':
+          $ref: '#/components/responses/ForbiddenRequest'
+  /users/{uid}/resend-user-creation-email:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    post:
+      tags:
+        - user
+      summary: Resend a new user creation email
+      operationId: resendUserCreationEmail
+      responses:
+        '200':
+          description: success
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedRequest'
+        '403':
+          $ref: '#/components/responses/ForbiddenRequest'
+  /users/email:
+    post:
+      tags:
+        - user
+      summary: Create a new user with email address
+      operationId: createUserEmail
+      requestBody:
+        description: New user with email address
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserWithEmailCreate'
+        required: true
+      responses:
+        '201':
+          description: object created
+          headers:
+            Uid:
+              schema:
+                $ref: '#/components/schemas/Uid'
+              description: uid of the created object.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedRequest'
+        '403':
+          $ref: '#/components/responses/ForbiddenRequest'
+  /users/username:
+    post:
+      tags:
+        - user
+      summary: Create a new user with username
+      operationId: createUserUsername
+      requestBody:
+        description: New user with username
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserWithUsernameCreate'
+        required: true
+      responses:
+        '201':
+          description: object created
+          headers:
+            Uid:
+              schema:
+                $ref: '#/components/schemas/Uid'
+              description: uid of the created object.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedRequest'
+        '403':
+          $ref: '#/components/responses/ForbiddenRequest'
+  /users/email/{uid}:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    put:
+      tags:
+        - user
+      summary: Update a user with email address
+      operationId: updateUserWithEmail
+      requestBody:
+        description: update user with email address object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserWithEmailUpdate'
+        required: true
+      responses:
+        '200':
+          description: object updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedRequest'
+        '403':
+          $ref: '#/components/responses/ForbiddenRequest'
+  /users/username/{uid}:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    put:
+      tags:
+        - user
+      summary: Update a user with username
+      operationId: updateUserWithUsername
+      requestBody:
+        description: update user with username object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserWithUsernameUpdate'
+        required: true
+      responses:
+        '200':
+          description: object updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedRequest'
+        '403':
+          $ref: '#/components/responses/ForbiddenRequest'
+  /users/username/{uid}/password:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    post:
+      tags:
+        - user
+      summary: Update a user with username only password
+      operationId: updateUserPassword
+      requestBody:
+        description: update user with username object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUsernameResetPassword'
+        required: true
+      responses:
+        '200':
+          description: object updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedRequest'
+        '403':
+          $ref: '#/components/responses/ForbiddenRequest'
+  /users/{uid}/activate:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    post:
+      tags:
+        - user
+      summary: Activate a user
+      operationId: activateUser
+      responses:
+        '200':
+          description: successful operation
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedRequest'
+        '403':
+          $ref: '#/components/responses/ForbiddenRequest'
+  /users/{uid}/deactivate:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    post:
+      tags:
+        - user
+      summary: Deactivate a user
+      operationId: deactivateUser
+      responses:
+        '200':
+          description: successful operation
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedRequest'
+        '403':
+          $ref: '#/components/responses/ForbiddenRequest'
+  /npi-orders/search:
+    post:
+      tags:
+        - npi-order
+      summary: |
+        Search npi order with filter
+        Return paginated data ordered by creationDate DESC
+      operationId: searchNpiOrders
+      parameters:
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/archivedFilterParam'
+      requestBody:
+        description: search cost requests
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NpiOrderSearch'
+        required: true
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NpiOrdersPaginated"
+  /npi-orders/{uid}:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    get:
+      tags:
+        - npi-order
+      summary: Retrieve a npi order
+      operationId: retrieveNpiOrder
+      responses:
+        '200':
+          description: npi order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NpiOrder'
+    put:
+      tags:
+        - npi-order
+      summary: Update a npi order
+      operationId: updateNpiOrder
+      requestBody:
+        description: update npi order object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NpiOrderUpdate'
+        required: true
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NpiOrder'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /npi-orders:
+    post:
+      tags:
+        - npi-order
+      summary: Create a new npi-order
+      operationId: createNpiOrder
+      requestBody:
+        description: Create npi order object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NpiOrderCreate'
+        required: true
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NpiOrder'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /npi-orders/{uid}/archive:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    post:
+      tags:
+        - npi-order
+      summary: Archive a npi order
+      operationId: archiveNpiOrder
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NpiOrder'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /npi-orders/{uid}/abort:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    post:
+      tags:
+        - npi-order
+      summary: abort a npi order and freeze all related data
+      operationId: abortNpiOrder
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NpiOrder'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /npi-orders/{uid}/files/upload:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    post:
+      tags:
+        - npi-order
+      summary: upload a npi order files
+      operationId: uploadNpiOrdersFiles
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UploadFiles"
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FileInfo"
+  /npi-orders/{uid}/files/download:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    post:
+      tags:
+        - npi-order
+      summary: download a npi order files
+      operationId: downloadNpiOrderFiles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Uid"
+      responses:
+        '200':
+          description: Successful operation
+  /npi-orders/{uid}/files/delete:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    post:
+      tags:
+        - npi-order
+      summary: delete a npi orderfiles
+      operationId: deleteNpiOrderFiles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Uid"
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FileInfo"
+  /npi-orders/{uid}/files:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    get:
+      tags:
+        - npi-order
+      summary: get npi order files
+      operationId: getAllNpiOrdersFiles
+      parameters:
+        - $ref: '#/components/parameters/uidParam'
+      responses:
+        '200':
+          description: successful operation, all npi order files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileInfo'
+  /npi-orders/{uid}/process:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    get:
+      tags:
+        - npi-order
+      summary: Retrieve a npi order process instance
+      operationId: retriveNpiOrderProcess
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessInstance"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedRequest'
+        '403':
+          $ref: '#/components/responses/ForbiddenRequest'
+  /npi-orders/{uid}/process/lines/{lineUid}/status:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+      - $ref: '#/components/parameters/lineUidParam'
+    post:
+      tags:
+        - npi-order
+      summary: update a npi order's instance process line status
+      operationId: updateNpiOrderProcessLineStatus
+      requestBody:
+        description: New recipe line status
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessInstanceLineStatusUpdateBody'
+        required: true
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutputProcessInstanceLineUpdate"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedRequest'
+        '403':
+          $ref: '#/components/responses/ForbiddenRequest'
+        '409':
+          $ref: '#/components/responses/EntityAlreadyExistsRequest'
+  /npi-orders/{uid}/process/lines/{lineUid}/statuses:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+      - $ref: '#/components/parameters/lineUidParam'
+    get:
+      tags:
+        - npi-order
+      summary: Retrieve a npi order process instance line statuses history
+      operationId: retrieveNpiOrderInstanceStatusesHistory
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessInstanceLineStatusesHistory"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedRequest'
+        '403':
+          $ref: '#/components/responses/ForbiddenRequest'
+  /npi-orders/{uid}/process/lines/{lineUid}/upload:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+      - $ref: '#/components/parameters/lineUidParam'
+    post:
+      tags:
+        - npi-order
+      summary: upload a npi order process line files
+      operationId: uploadNpiOrdersProcessLineFiles
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UploadFiles"
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FileInfo"
+  /npi-orders/{uid}/process/lines/{lineUid}/download:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+      - $ref: '#/components/parameters/lineUidParam'
+    post:
+      tags:
+        - npi-order
+      summary: download a npi order process line files
+      operationId: downloadNpiOrderProcessLineFiles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Uid"
+      responses:
+        '200':
+          description: Successful operation
+  /npi-orders/{uid}/process/lines/{lineUid}/delete:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+      - $ref: '#/components/parameters/lineUidParam'
+    post:
+      tags:
+        - npi-order
+      summary: delete a npi order process line files
+      operationId: deleteNpiOrderProcessLineFiles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Uid"
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FileInfo"
+  /npi-orders/{uid}/process/lines/{lineUid}/files:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+      - $ref: '#/components/parameters/lineUidParam'
+    get:
+      tags:
+        - npi-order
+      summary: get npi order process line process line files
+      operationId: getAllNpiOrdersProcessLineFiles
+      parameters:
+        - $ref: '#/components/parameters/uidParam'
+      responses:
+        '200':
+          description: successful operation, all npi order process line files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileInfo'
+components:
+  parameters:
+    uidParam:
+      in: path
+      name: uid
+      required: true
+      schema:
+        $ref: '#/components/schemas/Uid'
+    offsetParam:
+      in: query
+      name: offset
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      description: The number of items to skip before starting to collect the result set.
+    limitParam:
+      in: query
+      name: limit
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 50
+        default: 20
+      description: The numbers of items to return.
+    lineUidParam:
+      in: path
+      name: lineUid
+      required: true
+      schema:
+        $ref: '#/components/schemas/Uid'
+    startDateParam:
+      in: query
+      name: startDate
+      required: true
+      schema:
+        type: string
+        format: date
+      description: the start date to filter from
+    endDateParam:
+      in: query
+      name: endDate
+      required: true
+      schema:
+        type: string
+        format: date
+      description: the end date to filter to
+    activeFilterParam:
+      in: query
+      name: activeFilter
+      required: true
+      schema:
+        $ref: '#/components/schemas/ActiveFilter'
+      description: The active filter
+    archivedFilterParam:
+      in: query
+      name: archivedFilter
+      required: true
+      schema:
+        $ref: '#/components/schemas/ArchivedFilter'
+      description: The archived filter
+    messageUidParam:
+      in: path
+      name: messageUid
+      required: true
+      schema:
+        $ref: '#/components/schemas/Uid'
+  ##################################################################
+  ##################################################################
+  ##################################################################
+  schemas:
+    Dashboard:
+      type: object
+      properties:
+        globalKpis:
+          $ref: '#/components/schemas/DashboardGlobalKpis'
+        npiOrderCountByStageStatus:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardNpiOrderCountByStageStatus'
+
+    DashboardGlobalKpis:
+      type: object
+      properties:
+        totalOpenNpiOrders:
+          description: Number of non-finalized npi order (exclude final status)
+          type: integer
+        averageLeadTimeDaysOpenNpiOrders:
+          description: Average number of days since creation for open npi requests
+          type: number
+          format: double
+
+    DashboardNpiOrderCountByStageStatus:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ProcessInstanceLineStatus'
+        count:
+          type: integer
+
+    NpiOrderSearch:
+      allOf:
+        - $ref: '#/components/schemas/BasicSearch'
+        - type: object
+          properties:
+            statuses:
+              description: emptyList if no filter is applied
+              type: array
+              items:
+                $ref: '#/components/schemas/NpiOrderStatus'
+    PaginationInfos:
+      type: object
+      required:
+        - total
+        - page
+        - per_page
+        - has_next
+        - has_prev
+      properties:
+        total: { type: integer }
+        page: { type: integer }
+        per_page: { type: integer }
+        has_next: { type: boolean }
+        has_prev: { type: boolean }
+    BasicSearch:
+      type: object
+      required:
+        - searchText
+      properties:
+        searchText:
+          type: string
+    ActiveFilter:
+      type: string
+      enum:
+        - ACTIVE_ONLY
+        - INACTIVE_ONLY
+        - ALL
+    ArchivedFilter:
+      type: string
+      enum:
+        - NON_ARCHIVED_ONLY
+        - ARCHIVED_ONLY
+        - ALL
+    UserForgotPassword:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+    UserResetPassword:
+      type: object
+      required:
+        - token
+        - password
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+    UserUsernameResetPassword:
+      type: object
+      required:
+        - password
+      properties:
+        password:
+          type: string
+    LoginDetails:
+      type: object
+      properties:
+        login:
+          type: string
+        password:
+          type: string
+    LoggedUser:
+      type: object
+      required:
+        - uid
+        - login
+        - role
+        - active
+        - jwtToken
+      properties:
+        uid:
+          $ref: "#/components/schemas/Uid"
+        login:
+          type: string
+        type:
+          $ref: "#/components/schemas/UserType"
+        role:
+          $ref: "#/components/schemas/UserRole"
+        active:
+          type: boolean
+        jwtToken:
+          type: string
+          description: the logged user's authorization to be used for subsequent calls, valid 1 hour.
+    UsersPaginated:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/PaginationInfos"
+        - type: object
+          required:
+            - results
+          properties:
+            results:
+              type: array
+              items:
+                $ref: "#/components/schemas/User"
+    UserLicenseValid:
+      type: boolean
+    UserWithEmailCreate:
+      type: object
+      required:
+        - email
+        - role
+      properties:
+        email:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+    UserWithEmailUpdate:
+      type: object
+      required:
+        - role
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRole'
+    UserWithUsernameCreate:
+      type: object
+      required:
+        - username
+        - password
+        - role
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+    UserWithUsernameUpdate:
+      type: object
+      required:
+        - role
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRole'
+    User:
+      type: object
+      required:
+        - uid
+        - login
+        - role
+        - active
+        - registeredEmail
+        - type
+      properties:
+        uid:
+          $ref: '#/components/schemas/Uid'
+        login:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+        active:
+          type: boolean
+        type:
+          $ref: '#/components/schemas/UserType'
+        registeredEmail:
+          type: boolean
+    FileInfo:
+      type: object
+      required:
+        - uid
+        - fileName
+        - type
+      properties:
+        uid:
+          $ref: '#/components/schemas/Uid'
+        fileName:
+          type: string
+        type:
+          $ref: '#/components/schemas/FileType'
+    UploadFiles:
+      type: object
+      required:
+        - files
+      properties:
+        files:
+          type: array
+          items:
+            type: string
+            format: binary
+    Uid:
+      type: string
+      format: uuid
+    UserRole:
+      type: string
+      enum:
+        - ADMINISTRATOR
+        - SUPER_ADMINISTRATOR
+    FileType:
+      type: string
+      enum:
+        - ANY
+        - QUOTATION_PDF
+    UserType:
+      type: string
+      enum:
+        - EMAIL_ADDRESS
+        - USERNAME
+    UserSummary:
+      type: object
+      required:
+        - uid
+        - login
+        - role
+        - active
+      properties:
+        uid:
+          $ref: '#/components/schemas/Uid'
+        login:
+          type: string
+        role:
+          type: string
+        active:
+          type: boolean
+    ProcessInstanceLineStatusesHistory:
+      type: array
+      items:
+        $ref: '#/components/schemas/ProcessInstanceLineStatusHistory'
+    ProcessInstanceLineStatusHistory:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ProcessInstanceLineStatus'
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        byUser:
+          $ref: '#/components/schemas/UserSummary'
+    ProcessInstanceLineStatusUpdateBody:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/ProcessInstanceLineStatus'
+        remainingTime:
+          type: number
+          format: double
+        materialLastDeliveryDate:
+          type: string
+          format: date
+        planTime:
+          type: number
+          format: double
+    OutputProcessInstanceLineUpdate:
+      type: object
+      required:
+        - updatedProcessInstanceLine
+      properties:
+        processIsCompleted:
+          type: boolean
+        updatedProcessInstanceLine:
+          $ref: "#/components/schemas/ProcessInstanceLine"
+    ProcessInstance:
+      type: object
+      required:
+        - uid
+        - partNumber
+        - lines
+      properties:
+        uid:
+          $ref: "#/components/schemas/Uid"
+        partNumber:
+          type: string
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProcessInstanceLine"
+    ProcessInstanceLine:
+      type: object
+      required:
+        - processName
+        - status
+      properties:
+        uid:
+          $ref: "#/components/schemas/Uid"
+        processName:
+          type: string
+        status:
+          $ref: "#/components/schemas/ProcessInstanceLineStatus"
+        remainingDuration:
+          type: number
+          format: double
+        materialLastDeliveryDate:
+          type: string
+          format: date
+        planTime:
+          type: number
+          format: double
+        nbFiles:
+          type: integer
+    NpiOrdersPaginated:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/PaginationInfos"
+        - type: object
+          required:
+            - results
+          properties:
+            results:
+              type: array
+              items:
+                $ref: "#/components/schemas/NpiOrder"
+    NpiOrderCreate:
+      type: object
+      required:
+        - purchaseOrderNumber
+        - workOrderId
+        - partNumber
+        - quantity
+      properties:
+        purchaseOrderNumber:
+          type: string
+        workOrderId:
+          type: string
+        partNumber:
+          type: string
+        quantity:
+          type: integer
+        orderDate:
+          type: string
+          format: date
+        targetDeliveryDate:
+          type: string
+        customerName:
+          type: string
+        productName:
+          type: string
+    NpiOrderUpdate:
+      type: object
+      required:
+        - purchaseOrderNumber
+        - workOrderId
+        - partNumber
+        - quantity
+      properties:
+        purchaseOrderNumber:
+          type: string
+        workOrderId:
+          type: string
+        partNumber:
+          type: string
+        quantity:
+          type: integer
+        orderDate:
+          type: string
+          format: date
+        targetDeliveryDate:
+          type: string
+        customerName:
+          type: string
+        productName:
+          type: string
+    NpiOrder:
+      type: object
+      required:
+        - uid
+        - customer
+        - costRequestReferenceNumber
+        - costRequestRevision
+        - projectName
+        - purchaseOrderExpectedDate
+        - status
+        - creationDate
+        - updatedAt
+        - lines
+        - expired
+      properties:
+        uid:
+          $ref: '#/components/schemas/Uid'
+        purchaseOrderNumber:
+          type: string
+        workOrderId:
+          type: string
+        partNumber:
+          type: string
+        quantity:
+          type: integer
+        orderDate:
+          type: string
+          format: date
+        targetDeliveryDate:
+          type: string
+        customerName:
+          type: string
+        productName:
+          type: string
+        status:
+          $ref: '#/components/schemas/NpiOrderStatus'
+        currentProcessStepName:
+          type: string
+        creationDate:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        nbFiles:
+          type: integer
+        plannedDeliveryDate:
+          type: string
+          format: date
+        forecastDeliveryDate:
+          type: string
+          format: date
+        shippingDate:
+          type: string
+          format: date
+        customerApprovalDate:
+          type: string
+          format: date
+        customerRejectReason:
+          type: string
+        statusDate:
+          type: string
+          format: date-time
+    NpiOrderStatus:
+      type: string
+      enum:
+        - READY_TO_PRODUCTION
+        - STARTED
+        - COMPLETED
+        - ABORTED
+    ProcessInstanceLineStatus:
+      type: string
+      enum:
+        - NOT_SARTED
+        - IN_PROGRESS
+        - COMPLETED
+        - ABORTED
+    CustomError:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          $ref: '#/components/schemas/CustomErrorCode'
+        message:
+          type: string
+    CustomErrorCode:
+      type: string
+      enum:
+        - ACCESS_FORBIDDEN
+        - INTERNAL_ERROR
+        - INVALID_EMAIL_OR_PASSWORD
+        - ENTITY_NOT_FOUND
+        - ENTITY_ALREADY_EXISTS
+        - LICENSE_LIMIT_EXCEEDED
+        - USER_IS_INACTIVE
+        - USER_RESET_PASSWORD_INVALID_TOKEN
+        - USER_CANNOT_DEACTIVATE_ONESELF
+        - FILE_UNSUPPORTED
+        - FILE_EXISTS
+        - FILE_NOT_FOUND
+        - GENERIC_ERROR
+        - MUST_BE_DISCONNECTED
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CustomError'
+    UnauthorizedRequest:
+      description: Access token is missing or invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CustomError'
+    ForbiddenRequest:
+      description: Access is forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CustomError'
+    EntityNotFoundRequest:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CustomError'
+    EntityAlreadyExistsRequest:
+      description: Entity already exists
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CustomError'
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT    # optional, arbitrary value for documentation purposes
+
+security:
+  # 2) Apply the security globally to all operations
+  - bearerAuth: [ ]         # use the same name as above

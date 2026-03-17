@@ -49,7 +49,7 @@
                         </goals>
                         <configuration>
                             <generatorName>spring</generatorName>
-                            <inputSpec>${project.basedir}/src/main/resources/swagger-cost-seiko.yaml</inputSpec>
+                            <inputSpec>${project.basedir}/src/main/resources/swagger-npi-seiko.yaml</inputSpec>
                             <configOptions>
                                 <documentationProvider>springdoc</documentationProvider>
                                 <serializableModel>true</serializableModel>

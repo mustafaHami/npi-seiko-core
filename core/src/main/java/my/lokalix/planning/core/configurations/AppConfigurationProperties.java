@@ -25,14 +25,6 @@ public class AppConfigurationProperties {
   @NotBlank private String appBaseUrl;
   @NotNull private Integer startingYear;
   @NotBlank private String temporaryFilesPathDirectory;
-  @NotBlank private String costRequestFilesPathDirectory;
-  @NotBlank private String costRequestLineFilesPathDirectory;
-  @NotBlank private String toolingCostLineFilesPathDirectory;
-  @NotBlank private String externalExchangeRateUrl;
-  @NotBlank private String targetCurrencyCode;
-  private List<String> currencyListOrdering;
-  @NotNull private Integer numberHighestUsageProcessesToReturn;
-  @NotNull private Integer maxNumberOfQuantitiesPerCostRequestLine;
 
   private Smtp2go smtp2go = new Smtp2go();
   private ExcelTemplatePaths excelTemplatePaths = new ExcelTemplatePaths();
@@ -41,8 +33,6 @@ public class AppConfigurationProperties {
   @Getter
   @Setter
   public static class ExcelTemplatePaths {
-    @NotBlank private String standardBom;
-    @NotBlank private String standardGenerationExcelFileTemplate;
   }
 
   @Valid

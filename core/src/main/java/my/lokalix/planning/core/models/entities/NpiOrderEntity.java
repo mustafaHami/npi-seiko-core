@@ -1,0 +1,115 @@
+package my.lokalix.planning.core.models.entities;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import my.lokalix.planning.core.models.enums.NpiOrderStatus;
+import my.lokalix.planning.core.utils.TimeUtils;
+import org.apache.commons.lang3.StringUtils;
+
+@Getter
+@Setter
+@Entity
+@Table(name = "npi_order")
+@EqualsAndHashCode(of = "npiOrderId")
+public class NpiOrderEntity {
+
+  @Setter(AccessLevel.NONE)
+  @Id
+  private final UUID npiOrderId = UUID.randomUUID();
+
+  @NotBlank
+  @Column(nullable = false)
+  private String purchaseOrderNumber;
+
+  @NotBlank
+  @Column(nullable = false)
+  private String workOrderId;
+
+  @NotBlank
+  @Column(nullable = false)
+  private String partNumber;
+
+  @NotNull
+  @Column(nullable = false)
+  private Integer quantity;
+
+  private LocalDate orderDate;
+
+  private String targetDeliveryDate;
+
+  private String customerName;
+
+  private String productName;
+
+  @NotNull
+  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
+  private NpiOrderStatus status = NpiOrderStatus.READY_TO_PRODUCTION;
+
+  private String currentProcessStepName;
+
+  @Column(nullable = false)
+  private OffsetDateTime updatedAt = TimeUtils.nowOffsetDateTimeUTC();
+
+  private LocalDate plannedDeliveryDate;
+
+  private LocalDate forecastDeliveryDate;
+
+  private LocalDate shippingDate;
+
+  private LocalDate customerApprovalDate;
+
+  @Column(columnDefinition = "TEXT")
+  private String customerRejectReason;
+
+  private OffsetDateTime statusDate;
+
+  @Column(nullable = false)
+  private boolean archived = false;
+
+  private OffsetDateTime archivedAt;
+
+  @Setter(AccessLevel.NONE)
+  @NotNull
+  @Column(nullable = false)
+  private final OffsetDateTime creationDate = TimeUtils.nowOffsetDateTimeUTC();
+
+  @NotBlank
+  @Column(columnDefinition = "TEXT", nullable = false)
+  private String searchableConcatenatedFields;
+
+  @PrePersist
+  @PreUpdate
+  private void onSave() {
+    updatedAt = TimeUtils.nowOffsetDateTimeUTC();
+    buildSearchableConcatenation();
+  }
+
+  public void buildSearchableConcatenation() {
+    StringBuilder sb = new StringBuilder();
+    if (StringUtils.isNotBlank(purchaseOrderNumber)) {
+      sb.append(purchaseOrderNumber).append(" ");
+    }
+    if (StringUtils.isNotBlank(workOrderId)) {
+      sb.append(workOrderId).append(" ");
+    }
+    if (StringUtils.isNotBlank(partNumber)) {
+      sb.append(partNumber).append(" ");
+    }
+    if (StringUtils.isNotBlank(customerName)) {
+      sb.append(customerName).append(" ");
+    }
+    if (StringUtils.isNotBlank(productName)) {
+      sb.append(productName).append(" ");
+    }
+    searchableConcatenatedFields = sb.toString().trim();
+  }
+}

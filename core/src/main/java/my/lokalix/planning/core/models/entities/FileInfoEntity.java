@@ -28,18 +28,6 @@ public class FileInfoEntity {
   @Enumerated(EnumType.STRING)
   private FileType type = FileType.ANY;
 
-  @ManyToOne
-  @JoinColumn(name = "cost_request_id")
-  private CostRequestEntity costRequest;
-
-  @ManyToOne
-  @JoinColumn(name = "cost_request_line_id")
-  private CostRequestLineEntity costRequestLine;
-
-  @ManyToOne
-  @JoinColumn(name = "tooling_cost_line_id")
-  private ToolingCostLineEntity toolingCostLine;
-
   @Column(nullable = false, name = "index_id")
   private int indexId;
 }

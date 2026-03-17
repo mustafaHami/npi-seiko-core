@@ -4,6 +4,44 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
+**NPI Seiko Core** is an NPI (New Product Introduction) order management system. It is the operational follow-up
+application that comes after the quotation/estimation phase (handled by a separate "Cost Seiko" app). Once a product has
+been quoted and approved, an NPI order is created here to track the full manufacturing lifecycle.
+
+### Business Domain
+
+An **NPI Order** represents a manufacturing work order for a new product, identified by a purchase order number (PO),
+work order ID, part number, and quantity. Each NPI order goes through a **process workflow** composed of sequential
+stages (ProcessInstanceLines) such as:
+
+- Material purchasing & receiving
+- Manufacturing and testing
+- Validation document uploads
+- Shipping
+- Customer approval
+
+**NPI Order statuses:** `READY_TO_PRODUCTION` → `STARTED` → `COMPLETED` (or `ABORTED`)
+
+**Process line statuses:** `NOT_STARTED` → `IN_PROGRESS` → `COMPLETED` (or `ABORTED`)
+
+A **Dashboard** provides KPIs: open NPI count, average lead time, and NPI count by process stage status.
+
+### User Roles (NPI-specific, beyond admin roles)
+
+In addition to `ADMINISTRATOR` and `SUPER_ADMINISTRATOR`, the system supports NPI-specific roles:
+`PROJECT_MANAGER`, `ENGINEERING`, `PROCUREMENT`, `PLANNING`, `MANAGEMENT`
+
+### Key API Resources
+
+- `/npi-orders` — CRUD + search + archive/abort operations
+- `/npi-orders/{uid}/process` — Retrieve the process instance (workflow steps) for an NPI order
+- `/npi-orders/{uid}/process/lines/{lineUid}/status` — Update a process step status
+- `/npi-orders/{uid}/files` — File attachments at the NPI order level
+- `/npi-orders/{uid}/process/lines/{lineUid}/files` — File attachments per process step
+- `/dashboard` — Aggregated KPIs
+
+---
+
 Multi-module Spring Boot 4.0.2 application with Java 25, using OpenAPI-first design for API contract management. The
 application uses JWT-based authentication, PostgreSQL database, and follows clean architecture principles with strict
 layer separation.
@@ -269,7 +307,7 @@ REMOTE_HOST=<host-ip> ./deploy-image.sh planning-core-image:1.0.0
 **Two-module Maven project:**
 
 1. **`swagger/` module**: OpenAPI specification and code generation
-    - Contains: `swagger-cost-seiko.yaml` (1158 lines)
+    - Contains: `swagger-npi-seiko.yaml` (1158 lines)
     - Generates: Model classes with `SW` prefix (e.g., `SWUser`, `SWLoginDetails`)
     - Package: `my.zkonsulting.planning.generated.model`
     - Build output: Generated POJOs with Jackson annotations, validation, and serialization
@@ -335,7 +373,7 @@ REMOTE_HOST=<host-ip> ./deploy-image.sh planning-core-image:1.0.0
 
 **Critical workflow for understanding DTO/Entity separation:**
 
-1. Define API contract in `swagger/src/main/resources/swagger-cost-seiko.yaml`
+1. Define API contract in `swagger/src/main/resources/swagger-npi-seiko.yaml`
 2. Maven build generates Java models with `SW` prefix (e.g., `User` schema → `SWUser` class)
 3. Controllers import and use generated models: `import my.zkonsulting.planning.generated.model.*`
 4. MapStruct converts between generated DTOs and JPA entities
@@ -343,7 +381,7 @@ REMOTE_HOST=<host-ip> ./deploy-image.sh planning-core-image:1.0.0
 
 **When modifying APIs:**
 
-- Edit `swagger-cost-seiko.yaml` to change API contracts
+- Edit `swagger-npi-seiko.yaml` to change API contracts
 - Run `mvn clean install -pl swagger` to regenerate models
 - Update MapStruct mappers if new fields added
 - Controllers automatically use updated DTOs
@@ -850,7 +888,7 @@ automatically become ESTIMATED.
 
 ### Adding a New API Endpoint
 
-1. Define endpoint in `swagger/src/main/resources/swagger-cost-seiko.yaml`
+1. Define endpoint in `swagger/src/main/resources/swagger-npi-seiko.yaml`
 2. Rebuild swagger module: `mvn clean install -pl swagger`
 3. Create controller method with proper security annotation:
 

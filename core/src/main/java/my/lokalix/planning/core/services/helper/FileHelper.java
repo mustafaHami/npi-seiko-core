@@ -18,8 +18,6 @@ import java.util.zip.ZipOutputStream;
 import lombok.extern.slf4j.Slf4j;
 import my.lokalix.planning.core.configurations.AppConfigurationProperties;
 import my.lokalix.planning.core.exceptions.GenericWithMessageException;
-import my.lokalix.planning.core.models.entities.CostRequestEntity;
-import my.lokalix.planning.core.models.entities.CostRequestLineEntity;
 import my.lokalix.planning.core.models.entities.FileInfoEntity;
 import my.lokalix.planning.core.models.enums.FileType;
 import my.lokalix.planning.core.models.interfaces.FileInterface;
@@ -353,41 +351,6 @@ public class FileHelper {
     return fileUids.stream()
         .map(uuid -> entityRetrievalHelper.getMustExistFileEntity(uuid).getFileName())
         .collect(Collectors.toList());
-  }
-
-  /**
-   * Copy files from temporary directory to entity directory without deleting them from temp.
-   * Returns the list of file IDs that were processed (for later deletion from temp).
-   */
-  public List<UUID> copyFilesFromTemporaryDirectoryToEntityDirectory(
-      FileInterface fileInterfaceOfRequest, String entityId, List<UUID> fileIds) throws Exception {
-    List<UUID> processedFileIds = new ArrayList<>();
-    if (CollectionUtils.isEmpty(fileIds)) {
-      return processedFileIds;
-    }
-    String linePath =
-        switch (fileInterfaceOfRequest) {
-          case CostRequestEntity ignored ->
-              appConfigurationProperties.getCostRequestFilesPathDirectory();
-          case CostRequestLineEntity ignored ->
-              appConfigurationProperties.getCostRequestLineFilesPathDirectory();
-          default ->
-              throw new GenericWithMessageException("Unexpected value: " + fileInterfaceOfRequest);
-        };
-    for (UUID fileId : fileIds) {
-      FileInfoEntity fileInfoEntity = entityRetrievalHelper.getMustExistFileEntity(fileId);
-      copyFiles(
-          List.of(fileInfoEntity.getFileName()),
-          appConfigurationProperties.getTemporaryFilesPathDirectory()
-              + fileInfoEntity.getFileId().toString(),
-          linePath + entityId);
-      FileInfoEntity newFileInfoEntity = new FileInfoEntity();
-      newFileInfoEntity.setFileName(fileInfoEntity.getFileName());
-      newFileInfoEntity.setType(fileInfoEntity.getType());
-      fileInterfaceOfRequest.addAttachedFile(newFileInfoEntity);
-      processedFileIds.add(fileId);
-    }
-    return processedFileIds;
   }
 
   /**

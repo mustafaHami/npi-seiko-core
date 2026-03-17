@@ -7,9 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import my.lokalix.planning.core.configurations.AppConfigurationProperties;
 import my.lokalix.planning.core.models.entities.UserEntity;
 import my.lokalix.planning.core.models.enums.UserType;
-import my.lokalix.planning.core.repositories.GlobalConfigRepository;
 import my.lokalix.planning.core.repositories.UserRepository;
-import my.lokalix.planning.core.services.GlobalConfigService;
 import my.lokalix.planning.core.services.UserService;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -24,20 +22,11 @@ public class CustomEventListener {
   @Resource private AppConfigurationProperties appConfigurationProperties;
   @Resource private BCryptPasswordEncoder encoder;
   @Resource private UserRepository userRepository;
-  @Resource private GlobalConfigRepository globalConfigRepository;
-  @Resource private GlobalConfigService globalConfigService;
 
   @EventListener(ApplicationReadyEvent.class)
   public void afterStartup() {
-    createGlobalConfigIfNotExist();
     createSuperAdminUserIfNotExist();
     log.info("Application successfully started...");
-  }
-
-  private void createGlobalConfigIfNotExist() {
-    if (globalConfigRepository.findFirstBy().isEmpty()) {
-      globalConfigRepository.save(globalConfigService.buildDefaultGlobalConfig());
-    }
   }
 
   private void createSuperAdminUserIfNotExist() {

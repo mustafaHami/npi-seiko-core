@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import my.lokalix.planning.core.models.entities.admin.GlobalConfigEntity;
 
 public final class GlobalConstants {
   public static final String ZIP_FILE = "all_files.zip";
@@ -31,23 +30,4 @@ public final class GlobalConstants {
       "Standard Jigs And Fixtures";
   public static final String OTHER_COST_LINE_PACKAGING_COST = "Packaging Cost";
 
-  public static Map<String, BigDecimal> extractOtherCostNamesFromGlobalConfig(
-      GlobalConfigEntity globalConfig) {
-    Map<String, BigDecimal> nameToValue = new HashMap<>();
-    nameToValue.put(GlobalConstants.OTHER_COST_LINE_LABOR_COST, globalConfig.getLaborCost());
-    nameToValue.put(GlobalConstants.OTHER_COST_LINE_OVERHEAD_COST, globalConfig.getOverheadCost());
-    nameToValue.put(
-        GlobalConstants.OTHER_COST_LINE_INTERNAL_TRANSPORTATION,
-        globalConfig.getInternalTransportation());
-    nameToValue.put(
-        GlobalConstants.OTHER_COST_LINE_DEPRECIATION_COST, globalConfig.getDepreciationCost());
-    nameToValue.put(
-        GlobalConstants.OTHER_COST_LINE_ADMINISTRATION_COST, globalConfig.getAdministrationCost());
-    nameToValue.put(
-        GlobalConstants.OTHER_COST_LINE_STANDARD_JIGS_AND_FIXTURES,
-        globalConfig.getStandardJigsAndFixturesCost());
-    nameToValue.put(
-        GlobalConstants.OTHER_COST_LINE_PACKAGING_COST, globalConfig.getSmallPackagingCost());
-    return nameToValue;
-  }
 }
