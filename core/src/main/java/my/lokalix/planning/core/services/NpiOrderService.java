@@ -110,6 +110,12 @@ public class NpiOrderService {
   @Transactional
   public SWNpiOrder archiveNpiOrder(UUID uid) {
     NpiOrderEntity entity = entityRetrievalHelper.getMustExistNpiOrderById(uid);
+    if (!(entity.getStatus().equals(NpiOrderStatus.COMPLETED)
+        || entity.getStatus().equals(NpiOrderStatus.ABORTED))) {
+      throw new GenericWithMessageException(
+          "Cannot archive an NPI order with status " + entity.getStatus().getValue(),
+          SWCustomErrorCode.GENERIC_ERROR);
+    }
     entity.setArchived(true);
     entity.setArchivedAt(TimeUtils.nowOffsetDateTimeUTC());
     return npiOrderMapper.toSWNpiOrder(npiOrderRepository.save(entity));
