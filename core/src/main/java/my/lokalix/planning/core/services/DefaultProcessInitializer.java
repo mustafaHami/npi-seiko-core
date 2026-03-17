@@ -24,11 +24,11 @@ public class DefaultProcessInitializer implements ApplicationRunner {
     log.info("Initializing default processes...");
 
     processRepository.save(buildMaterialPurchase());
-    processRepository.save(buildProcess("Material Receiving"));
+    processRepository.save(buildMaterialReceiving());
     processRepository.save(buildProduction());
     processRepository.save(buildTesting());
     processRepository.save(buildShipment());
-    processRepository.save(buildProcess("Customer Approval"));
+    processRepository.save(buildCustomerApproval());
 
     log.info("Default processes initialized successfully.");
   }
@@ -36,6 +36,18 @@ public class DefaultProcessInitializer implements ApplicationRunner {
   private ProcessEntity buildMaterialPurchase() {
     ProcessEntity p = buildProcess("Material Purchase");
     p.setIsMaterialPurchase(true);
+    return p;
+  }
+
+  private ProcessEntity buildMaterialReceiving() {
+    ProcessEntity p = buildProcess("Material Receiving");
+    p.setIsMaterialReceiving(true);
+    return p;
+  }
+
+  private ProcessEntity buildCustomerApproval() {
+    ProcessEntity p = buildProcess("Customer Approval");
+    p.setIsCustomerApproval(true);
     return p;
   }
 

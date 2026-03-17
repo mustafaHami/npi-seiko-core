@@ -48,32 +48,11 @@ public class HiddenController {
   public ResponseEntity<List<SWNpiOrder>> seedNpiOrders() {
     List<SWNpiOrderCreate> seeds =
         List.of(
-            buildNpiOrderCreate(
-                "PO-2024-001", "WO-001", "PN-A100", "Seiko Watch Case A", "Seiko", 50, 14, 7, -30),
-            buildNpiOrderCreate(
-                "PO-2024-002", "WO-002", "PN-B200", "Seiko Dial B200", "Seiko", 100, 10, 5, -20),
-            buildNpiOrderCreate(
-                "PO-2024-003",
-                "WO-003",
-                "PN-C300",
-                "Crown Assembly C300",
-                "Grand Seiko",
-                25,
-                21,
-                10,
-                -10),
-            buildNpiOrderCreate(
-                "PO-2024-004",
-                "WO-004",
-                "PN-D400",
-                "Movement Holder D400",
-                "Seiko Instruments",
-                200,
-                7,
-                3,
-                -5),
-            buildNpiOrderCreate(
-                "PO-2025-001", "WO-005", "PN-E500", "Bracelet Link E500", "Seiko", 75, 14, 7, 0));
+            buildNpiOrderCreate("PO-2024-001", "WO-001", "PN-A100", "Seiko Watch Case A", "Seiko", 50, -30, 5, 3, 14, 7, 2, 3),
+            buildNpiOrderCreate("PO-2024-002", "WO-002", "PN-B200", "Seiko Dial B200", "Seiko", 100, -20, 5, 3, 14, 7, 2, 3),
+            buildNpiOrderCreate("PO-2024-003", "WO-003", "PN-C300", "Crown Assembly C300", "Grand Seiko", 25, -10, 5, 3, 14, 7, 2, 3),
+            buildNpiOrderCreate("PO-2024-004", "WO-004", "PN-D400", "Movement Holder D400", "Seiko Instruments", 200, -5, 5, 3, 14, 7, 2, 3),
+            buildNpiOrderCreate("PO-2025-001", "WO-005", "PN-E500", "Bracelet Link E500", "Seiko", 75, 0, 5, 3, 14, 7, 2, 3));
 
     List<SWNpiOrder> created = seeds.stream().map(npiOrderService::createNpiOrder).toList();
     return new ResponseEntity<>(created, HttpStatus.OK);
@@ -86,9 +65,14 @@ public class HiddenController {
       String productName,
       String customerName,
       int quantity,
-      int productionPlanTime,
-      int testingPlanTime,
-      int orderDateOffsetDays) {
+      int orderDateOffsetDays,
+      int materialPurchase,
+      int materialReceiving,
+      int production,
+      int testing,
+      int shipping,
+      int customerApproval) {
+    double totalHours = materialPurchase + materialReceiving + production + testing + shipping + customerApproval;
     SWNpiOrderCreate body = new SWNpiOrderCreate();
     body.setPurchaseOrderNumber(poNumber);
     body.setWorkOrderId(workOrderId);
@@ -96,11 +80,14 @@ public class HiddenController {
     body.setProductName(productName);
     body.setCustomerName(customerName);
     body.setQuantity(quantity);
-    body.setProductionPlanTime(new BigDecimal(productionPlanTime));
-    body.setTestingPlanTime(new BigDecimal(testingPlanTime));
+    body.setMaterialPurchasePlanTimeInHours(BigDecimal.valueOf(materialPurchase));
+    body.setMaterialReceivingPlanTimeInHours(BigDecimal.valueOf(materialReceiving));
+    body.setProductionPlanTimeInHours(BigDecimal.valueOf(production));
+    body.setTestingPlanTimeInHours(BigDecimal.valueOf(testing));
+    body.setShippingPlanTimeInHours(BigDecimal.valueOf(shipping));
+    body.setCustomerApprovalPlanTimeInHours(BigDecimal.valueOf(customerApproval));
     body.setOrderDate(LocalDate.now().plusDays(orderDateOffsetDays));
-    body.setTargetDeliveryDate(
-        LocalDate.now().plusDays(orderDateOffsetDays + productionPlanTime + testingPlanTime + 5));
+    body.setTargetDeliveryDate(LocalDate.now().plusDays((long) (orderDateOffsetDays + totalHours + 5)));
     return body;
   }
 }

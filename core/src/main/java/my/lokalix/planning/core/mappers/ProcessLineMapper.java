@@ -12,9 +12,11 @@ public abstract class ProcessLineMapper {
 
   @Mapping(source = "processLineId", target = "uid")
   @Mapping(source = "isMaterialPurchase", target = "isMaterialPurchase")
+  @Mapping(source = "isMaterialReceiving", target = "isMaterialReceiving")
   @Mapping(source = "isProduction", target = "isProduction")
   @Mapping(source = "isTesting", target = "isTesting")
   @Mapping(source = "isShipment", target = "isShipment")
+  @Mapping(source = "isCustomerApproval", target = "isCustomerApproval")
   public abstract SWProcessLine toSWProcessLine(ProcessLineEntity entity);
 
   public abstract List<SWProcessLine> toListSWProcessLine(List<ProcessLineEntity> entities);

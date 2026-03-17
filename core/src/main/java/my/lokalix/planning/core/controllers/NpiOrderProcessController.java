@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
-
 import lombok.RequiredArgsConstructor;
 import my.lokalix.planning.core.services.NpiOrderService;
 import my.zkonsulting.planning.generated.model.*;
@@ -28,11 +27,11 @@ public class NpiOrderProcessController {
   }
 
   @PostMapping("/lines/{lineUid}/status")
-  public ResponseEntity<SWOutputProcessLineUpdate> updateNpiOrderProcessLineStatus(
+  public ResponseEntity<List<SWProcessLine>> updateNpiOrderProcessLineStatus(
       @PathVariable final UUID uid,
       @PathVariable final UUID lineUid,
       @Valid @RequestBody SWProcessLineStatusUpdateBody body) {
-    SWOutputProcessLineUpdate result =
+    List<SWProcessLine> result =
         npiOrderService.updateNpiOrderProcessLineStatus(uid, lineUid, body);
     return new ResponseEntity<>(result, HttpStatus.OK);
   }
@@ -42,6 +41,15 @@ public class NpiOrderProcessController {
       @PathVariable final UUID uid, @PathVariable final UUID lineUid) {
     List<SWProcessLineStatusHistory> result =
         npiOrderService.retrieveNpiOrderProcessLineStatusesHistory(uid, lineUid);
+    return new ResponseEntity<>(result, HttpStatus.OK);
+  }
+
+  @PutMapping("/lines/{lineUid}/remaining-time")
+  public ResponseEntity<SWProcessLine> updateProcessLineRemainingTime(
+      @PathVariable final UUID uid,
+      @PathVariable final UUID lineUid,
+      @Valid @RequestBody SWProcessLineRemainingTimeUpdate body) {
+    SWProcessLine result = npiOrderService.updateProcessLineRemainingTime(uid, lineUid, body);
     return new ResponseEntity<>(result, HttpStatus.OK);
   }
 

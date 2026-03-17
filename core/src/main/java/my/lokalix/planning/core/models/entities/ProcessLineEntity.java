@@ -43,6 +43,10 @@ public class ProcessLineEntity {
 
   @NotNull
   @Column(nullable = false)
+  private Boolean isMaterialReceiving = false;
+
+  @NotNull
+  @Column(nullable = false)
   private Boolean isProduction = false;
 
   @NotNull
@@ -52,6 +56,10 @@ public class ProcessLineEntity {
   @NotNull
   @Column(nullable = false)
   private Boolean isShipment = false;
+
+  @NotNull
+  @Column(nullable = false)
+  private Boolean isCustomerApproval = false;
 
   @NotBlank
   @Column(nullable = false)
@@ -67,10 +75,10 @@ public class ProcessLineEntity {
   private OffsetDateTime currentStatusDate = TimeUtils.nowOffsetDateTimeUTC();
 
   @Column(precision = 25, scale = 6)
-  private BigDecimal planTime;
+  private BigDecimal planTimeInHours;
 
   @Column(precision = 25, scale = 6)
-  private BigDecimal remainingDuration;
+  private BigDecimal remainingTimeInHours;
 
   private LocalDate materialLatestDeliveryDate;
 

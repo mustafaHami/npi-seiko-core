@@ -36,6 +36,10 @@ public class ProcessEntity {
 
   @NotNull
   @Column(nullable = false)
+  private Boolean isMaterialReceiving = false;
+
+  @NotNull
+  @Column(nullable = false)
   private Boolean isProduction = false;
 
   @NotNull
@@ -45,6 +49,10 @@ public class ProcessEntity {
   @NotNull
   @Column(nullable = false)
   private Boolean isShipment = false;
+
+  @NotNull
+  @Column(nullable = false)
+  private Boolean isCustomerApproval = false;
 
   @Setter(AccessLevel.NONE)
   @NotNull

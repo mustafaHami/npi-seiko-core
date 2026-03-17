@@ -708,7 +708,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OutputProcessLineUpdate"
+                items:
+                  $ref: "#/components/schemas/ProcessLine"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -733,6 +734,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProcessLineStatusesHistory"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedRequest'
+        '403':
+          $ref: '#/components/responses/ForbiddenRequest'
+  /npi-orders/{uid}/process/lines/{lineUid}/remaining-time:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+      - $ref: '#/components/parameters/lineUidParam'
+    put:
+      tags:
+        - npi-order
+      summary: Update the remaining time of a process line (must be IN_PROGRESS)
+      operationId: updateProcessLineRemainingTime
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessLineRemainingTimeUpdate'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessLine"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1200,6 +1229,14 @@ components:
           format: date-time
         byUser:
           $ref: '#/components/schemas/UserSummary'
+    ProcessLineRemainingTimeUpdate:
+      type: object
+      required:
+        - remainingTimeInHours
+      properties:
+        remainingTimeInHours:
+          type: number
+          format: double
     ProcessLineMaterialDeliveryDateImport:
       type: object
       required:
@@ -1226,24 +1263,12 @@ components:
       properties:
         status:
           $ref: '#/components/schemas/ProcessLineStatus'
-        remainingTime:
-          type: number
-          format: double
         materialLatestDeliveryDate:
           type: string
           format: date
-        planTime:
+        remainingTimeInHours:
           type: number
           format: double
-    OutputProcessLineUpdate:
-      type: object
-      required:
-        - updatedProcessLine
-      properties:
-        processIsCompleted:
-          type: boolean
-        updatedProcessLine:
-          $ref: "#/components/schemas/ProcessLine"
     Process:
       type: object
       required:
@@ -1271,24 +1296,28 @@ components:
           type: string
         status:
           $ref: "#/components/schemas/ProcessLineStatus"
-        remainingDuration:
+        remainingTimeInHours:
           type: number
           format: double
         materialLatestDeliveryDate:
           type: string
           format: date
-        planTime:
+        planTimeInHours:
           type: number
           format: double
         nbFiles:
           type: integer
         isMaterialPurchase:
           type: boolean
-        isShipment:
+        isMaterialReceiving:
           type: boolean
         isProduction:
           type: boolean
         isTesting:
+          type: boolean
+        isShipment:
+          type: boolean
+        isCustomerApproval:
           type: boolean
     NpiOrdersPaginated:
       type: object
@@ -1309,8 +1338,12 @@ components:
         - workOrderId
         - partNumber
         - quantity
-        - productionPlanTime
-        - testingPlanTime
+        - materialPurchasePlanTimeInHours
+        - materialReceivingPlanTimeInHours
+        - productionPlanTimeInHours
+        - testingPlanTimeInHours
+        - shippingPlanTimeInHours
+        - customerApprovalPlanTimeInHours
       properties:
         purchaseOrderNumber:
           type: string
@@ -1330,10 +1363,22 @@ components:
           type: string
         productName:
           type: string
-        productionPlanTime:
+        materialPurchasePlanTimeInHours:
           type: number
           format: double
-        testingPlanTime:
+        materialReceivingPlanTimeInHours:
+          type: number
+          format: double
+        productionPlanTimeInHours:
+          type: number
+          format: double
+        testingPlanTimeInHours:
+          type: number
+          format: double
+        shippingPlanTimeInHours:
+          type: number
+          format: double
+        customerApprovalPlanTimeInHours:
           type: number
           format: double
     NpiOrderUpdate:
@@ -1343,8 +1388,6 @@ components:
         - workOrderId
         - partNumber
         - quantity
-        - productionPlanTime
-        - testingPlanTime
       properties:
         purchaseOrderNumber:
           type: string
@@ -1364,10 +1407,22 @@ components:
           type: string
         productName:
           type: string
-        productionPlanTime:
+        materialPurchasePlanTimeInHours:
           type: number
           format: double
-        testingPlanTime:
+        materialReceivingPlanTimeInHours:
+          type: number
+          format: double
+        productionPlanTimeInHours:
+          type: number
+          format: double
+        testingPlanTimeInHours:
+          type: number
+          format: double
+        shippingPlanTimeInHours:
+          type: number
+          format: double
+        customerApprovalPlanTimeInHours:
           type: number
           format: double
     NpiOrder:

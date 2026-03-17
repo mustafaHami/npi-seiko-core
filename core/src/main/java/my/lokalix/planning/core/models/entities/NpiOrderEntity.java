@@ -5,15 +5,15 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import my.lokalix.planning.core.models.enums.NpiOrderStatus;
+import my.lokalix.planning.core.models.enums.ProcessLineStatus;
 import my.lokalix.planning.core.utils.TimeUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @Getter
@@ -83,6 +83,19 @@ public class NpiOrderEntity {
   @OneToMany(mappedBy = "npiOrder", cascade = CascadeType.ALL, orphanRemoval = true)
   @OrderBy("indexId ASC")
   private List<ProcessLineEntity> processLines = new ArrayList<>();
+
+  public void checkIfAllLinesIsCompleted() {
+    if (CollectionUtils.isEmpty(processLines)) return;
+    if (processLines.stream()
+        .allMatch((pl) -> pl.getStatus().equals(ProcessLineStatus.COMPLETED))) {
+      setStatus(NpiOrderStatus.COMPLETED);
+    }
+  }
+
+  public void setStatus(NpiOrderStatus status) {
+    this.statusDate = TimeUtils.nowOffsetDateTimeUTC();
+    this.status = status;
+  }
 
   public void addProcessLine(@NotNull ProcessLineEntity line) {
     line.setIndexId(processLines.size());
