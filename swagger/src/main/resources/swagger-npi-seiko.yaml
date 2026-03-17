@@ -1266,6 +1266,12 @@ components:
         materialLatestDeliveryDate:
           type: string
           format: date
+        shippingDate:
+          type: string
+          format: date
+        customerApprovalDate:
+          type: string
+          format: date
         remainingTimeInHours:
           type: number
           format: double

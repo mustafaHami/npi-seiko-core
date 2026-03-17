@@ -82,6 +82,10 @@ public class ProcessLineEntity {
 
   private LocalDate materialLatestDeliveryDate;
 
+  private LocalDate shippingDate;
+
+  private LocalDate customerApprovalDate;
+
   @Column(nullable = false, name = "index_id")
   private int indexId;
 

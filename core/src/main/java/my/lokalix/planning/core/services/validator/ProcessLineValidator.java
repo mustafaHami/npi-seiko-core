@@ -29,19 +29,13 @@ public class ProcessLineValidator {
         throw new GenericWithMessageException(
             "Latest delivery date is required to start this step", SWCustomErrorCode.GENERIC_ERROR);
       }
-      if (line.getIsProduction() && body.getRemainingTimeInHours() == null) {
-        throw new GenericWithMessageException(
-            "Remaining time is required to start Production", SWCustomErrorCode.GENERIC_ERROR);
-      }
-      if (line.getIsTesting() && body.getRemainingTimeInHours() == null) {
-        throw new GenericWithMessageException(
-            "Remaining time is required to start Testing", SWCustomErrorCode.GENERIC_ERROR);
-      }
     }
-    if (newStatus == ProcessLineStatus.COMPLETED
-        && !line.getStatus().equals(ProcessLineStatus.IN_PROGRESS)) {
-      throw new GenericWithMessageException(
-          "Cannot complete a step that is not in progress", SWCustomErrorCode.GENERIC_ERROR);
+    if (!line.getIsMaterialReceiving()) {
+      if (newStatus == ProcessLineStatus.COMPLETED
+          && !line.getStatus().equals(ProcessLineStatus.IN_PROGRESS)) {
+        throw new GenericWithMessageException(
+            "Cannot complete a step that is not in progress", SWCustomErrorCode.GENERIC_ERROR);
+      }
     }
   }
 }

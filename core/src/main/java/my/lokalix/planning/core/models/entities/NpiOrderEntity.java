@@ -63,8 +63,6 @@ public class NpiOrderEntity {
 
   private LocalDate plannedDeliveryDate;
   private LocalDate forecastDeliveryDate;
-  private LocalDate shippingDate;
-  private LocalDate customerApprovalDate;
 
   @Column(columnDefinition = "TEXT")
   private String customerRejectReason;

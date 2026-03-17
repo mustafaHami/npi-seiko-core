@@ -157,13 +157,15 @@ public class NpiOrderService {
       }
       if (line.getIsProduction() || line.getIsTesting()) {
         line.setRemainingTimeInHours(body.getRemainingTimeInHours());
-        recalculateForecastDeliveryDate(npiOrder, line);
       }
     }
 
     if (newStatus == ProcessLineStatus.COMPLETED && line.getIsShipment()) {
-      npiOrder.setShippingDate(TimeUtils.nowLocalDate(appConfigurationProperties.getAppTimezone()));
-      npiOrderRepository.save(npiOrder);
+      if (body.getShippingDate() == null) {
+        throw new IllegalArgumentException(
+            "Shipping date cannot be null for completed shipment lines");
+      }
+      line.setShippingDate(body.getShippingDate());
     }
 
     line.addStatus(
@@ -173,12 +175,11 @@ public class NpiOrderService {
         loggedUserDetailsService.getLoggedUserReference());
     processLineRepository.save(line);
 
-    List<ProcessLineEntity> allLines =
-        processLineRepository.findAllByNpiOrderOrderByIndexIdAsc(npiOrder);
+    npiOrderRepository.save(npiOrder);
     npiOrder.checkIfAllLinesIsCompleted();
-    return processLineMapper.toListSWProcessLine(allLines);
-  }
 
+    return processLineMapper.toListSWProcessLine(npiOrder.getProcessLines());
+  }
   @Transactional
   public SWNpiOrdersPaginated searchNpiOrders(
       int offset, int limit, SWArchivedFilter archivedFilter, SWNpiOrderSearch body) {
@@ -257,12 +258,14 @@ public class NpiOrderService {
 
   private void recalculateForecastDeliveryDate(
       NpiOrderEntity npiOrder, ProcessLineEntity updatedLine) {
+
     List<ProcessLineEntity> allLines =
         processLineRepository.findAllByNpiOrderOrderByIndexIdAsc(npiOrder);
 
     LocalDate today = TimeUtils.nowLocalDate(appConfigurationProperties.getAppTimezone());
+    final double hoursPerDay = 24.0;
 
-    double totalForecastDays = 0;
+    double totalForecastHours = 0;
     for (ProcessLineEntity l : allLines) {
       boolean isCurrentLine = l.getProcessLineId().equals(updatedLine.getProcessLineId());
       ProcessLineStatus status = isCurrentLine ? updatedLine.getStatus() : l.getStatus();
@@ -270,14 +273,20 @@ public class NpiOrderService {
           isCurrentLine ? updatedLine.getRemainingTimeInHours() : l.getRemainingTimeInHours();
       BigDecimal planTimeInHours = l.getPlanTimeInHours();
 
-      if (status == ProcessLineStatus.IN_PROGRESS && remainingTimeInHours != null) {
-        totalForecastDays += remainingTimeInHours.doubleValue();
+      if (status == ProcessLineStatus.IN_PROGRESS) {
+        if (planTimeInHours != null) {
+          totalForecastHours += planTimeInHours.doubleValue();
+        }
+        if (remainingTimeInHours != null) {
+          totalForecastHours += remainingTimeInHours.doubleValue();
+        }
       } else if (status == ProcessLineStatus.NOT_STARTED && planTimeInHours != null) {
-        totalForecastDays += planTimeInHours.doubleValue();
+        totalForecastHours += planTimeInHours.doubleValue();
       }
     }
 
-    npiOrder.setForecastDeliveryDate(today.plusDays(Math.round(totalForecastDays)));
+    long forecastDays = (long) Math.ceil(totalForecastHours / hoursPerDay);
+    npiOrder.setForecastDeliveryDate(today.plusDays(forecastDays));
     npiOrderRepository.save(npiOrder);
   }
 
@@ -302,7 +311,13 @@ public class NpiOrderService {
     ProcessLineEntity line = entityRetrievalHelper.getMustExistProcessLineById(lineUid);
     processLineValidator.validateRemainingTimeUpdate(line);
     line.setRemainingTimeInHours(body.getRemainingTimeInHours());
-    recalculateForecastDeliveryDate(npiOrder, line);
+    if ((line.getRemainingTimeInHours() == null && body.getRemainingTimeInHours() != null)
+        || (line.getRemainingTimeInHours() != null && body.getRemainingTimeInHours() == null)
+        || (line.getRemainingTimeInHours() != null
+            && body.getRemainingTimeInHours() != null
+            && !line.getRemainingTimeInHours().equals(body.getRemainingTimeInHours()))) {
+      recalculateForecastDeliveryDate(npiOrder, line);
+    }
     return processLineMapper.toSWProcessLine(processLineRepository.save(line));
   }
 
