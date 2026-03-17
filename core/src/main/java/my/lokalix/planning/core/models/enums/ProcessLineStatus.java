@@ -8,7 +8,7 @@ public enum ProcessLineStatus {
   IN_PROGRESS("IN_PROGRESS", "In Progress"),
 
   COMPLETED("COMPLETED", "Completed"),
-  ABORTED("ABORTed", "Aborted");
+  ABORTED("ABORTED", "Aborted");
 
   private final String value;
   @Getter private final String humanReadableValue;
