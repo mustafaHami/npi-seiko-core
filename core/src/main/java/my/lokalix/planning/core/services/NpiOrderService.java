@@ -149,6 +149,7 @@ public class NpiOrderService {
     npiValidator.validateNpiUpdatable(npiOrder);
     processLineValidator.validateStatusUpdate(line, body);
 
+    ProcessLineStatus previousStatus = line.getStatus();
     ProcessLineStatus newStatus = ProcessLineStatus.fromValue(body.getStatus().getValue());
 
     if (newStatus == ProcessLineStatus.IN_PROGRESS) {
@@ -174,12 +175,15 @@ public class NpiOrderService {
         newStatus,
         loggedUserDetailsService.getLoggedUserReference());
     processLineRepository.save(line);
+    resetFollowingLinesToDefaultState(npiOrder, line);
+    recalculateForecastDeliveryDate(npiOrder, line);
 
     npiOrderRepository.save(npiOrder);
     npiOrder.checkIfAllLinesIsCompleted();
 
     return processLineMapper.toListSWProcessLine(npiOrder.getProcessLines());
   }
+
   @Transactional
   public SWNpiOrdersPaginated searchNpiOrders(
       int offset, int limit, SWArchivedFilter archivedFilter, SWNpiOrderSearch body) {
@@ -290,6 +294,39 @@ public class NpiOrderService {
     npiOrderRepository.save(npiOrder);
   }
 
+  private void resetFollowingLinesToDefaultState(
+      NpiOrderEntity npiOrder, ProcessLineEntity referenceLine) {
+    List<ProcessLineEntity> allLines =
+        processLineRepository.findAllByNpiOrderOrderByIndexIdAsc(npiOrder);
+    for (ProcessLineEntity line : allLines) {
+      if (line.getIndexId() <= referenceLine.getIndexId()) {
+        continue;
+      }
+      resetLineToDefaultState(line);
+      if (line.getStatus() != ProcessLineStatus.NOT_STARTED) {
+        line.addStatus(
+            TimeUtils.nowOffsetDateTimeUTC(),
+            null,
+            ProcessLineStatus.NOT_STARTED,
+            loggedUserDetailsService.getLoggedUserReference());
+      }
+      processLineRepository.save(line);
+    }
+  }
+
+  private void resetLineToDefaultState(ProcessLineEntity line) {
+    line.setRemainingTimeInHours(null);
+    if (line.getIsMaterialPurchase()) {
+      line.setMaterialLatestDeliveryDate(null);
+    }
+    if (line.getIsShipment()) {
+      line.setShippingDate(null);
+    }
+    if (line.getIsCustomerApproval()) {
+      line.setCustomerApprovalDate(null);
+    }
+  }
+
   private void calculateAndSetDeliveryDates(NpiOrderEntity entity) {
     if (entity.getOrderDate() == null) {
       return;
@@ -310,12 +347,13 @@ public class NpiOrderService {
     NpiOrderEntity npiOrder = entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
     ProcessLineEntity line = entityRetrievalHelper.getMustExistProcessLineById(lineUid);
     processLineValidator.validateRemainingTimeUpdate(line);
+    BigDecimal previousRemainingTimeInHours = line.getRemainingTimeInHours();
     line.setRemainingTimeInHours(body.getRemainingTimeInHours());
-    if ((line.getRemainingTimeInHours() == null && body.getRemainingTimeInHours() != null)
-        || (line.getRemainingTimeInHours() != null && body.getRemainingTimeInHours() == null)
-        || (line.getRemainingTimeInHours() != null
+    if ((previousRemainingTimeInHours == null && body.getRemainingTimeInHours() != null)
+        || (previousRemainingTimeInHours != null && body.getRemainingTimeInHours() == null)
+        || (previousRemainingTimeInHours != null
             && body.getRemainingTimeInHours() != null
-            && !line.getRemainingTimeInHours().equals(body.getRemainingTimeInHours()))) {
+            && previousRemainingTimeInHours.compareTo(body.getRemainingTimeInHours()) != 0)) {
       recalculateForecastDeliveryDate(npiOrder, line);
     }
     return processLineMapper.toSWProcessLine(processLineRepository.save(line));

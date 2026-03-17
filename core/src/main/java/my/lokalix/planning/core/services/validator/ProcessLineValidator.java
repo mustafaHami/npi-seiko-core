@@ -30,12 +30,5 @@ public class ProcessLineValidator {
             "Latest delivery date is required to start this step", SWCustomErrorCode.GENERIC_ERROR);
       }
     }
-    if (!line.getIsMaterialReceiving()) {
-      if (newStatus == ProcessLineStatus.COMPLETED
-          && !line.getStatus().equals(ProcessLineStatus.IN_PROGRESS)) {
-        throw new GenericWithMessageException(
-            "Cannot complete a step that is not in progress", SWCustomErrorCode.GENERIC_ERROR);
-      }
-    }
   }
 }
