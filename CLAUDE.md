@@ -210,7 +210,51 @@ private BigDecimal rate;
 private BigDecimal price;
    ```
 
-14. **Validators:** ALWAYS put business validation logic in a dedicated validator class in `services/validator/`, NEVER
+14. **Ordered OneToMany Collections — `indexId` Pattern:** When a `@OneToMany` collection needs to maintain a
+    user-defined order, ALWAYS use an `indexId` field managed through dedicated add/remove methods on the parent entity.
+    NEVER use a database-level `orderIndex` column on the child entity or sort by `creationDate`.
+
+   **Child entity:**
+   ```java
+   @Column(nullable = false, name = "index_id")
+   private int indexId;
+   ```
+
+   **Parent entity:**
+   ```java
+   @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+   @OrderBy("indexId ASC")
+   private List<ChildEntity> children = new ArrayList<>();
+
+   public void addChild(@NotNull ChildEntity child) {
+     child.setIndexId(children.size()); // assigns next available index
+     child.setParent(this);
+     children.add(child);
+   }
+
+   public void removeChild(@NotNull ChildEntity child) {
+     children.remove(child);
+     child.setParent(null);
+     reindexChildren();
+   }
+
+   private void reindexChildren() {
+     for (int i = 0; i < children.size(); i++) {
+       children.get(i).setIndexId(i);
+     }
+   }
+   ```
+
+   **Rules:**
+   - ALWAYS call `addChild()` / `removeChild()` — never manually set `indexId` or manipulate the list directly
+   - ALWAYS add `@OrderBy("indexId ASC")` on the `@OneToMany` annotation
+   - ALWAYS use `CascadeType.ALL` + `orphanRemoval = true` so JPA persists/removes children automatically
+   - NEVER expose a separate repository `saveAll()` for the children when using this pattern — rely on cascade
+
+   **See:** `NpiOrderEntity.processLines` + `NpiOrderEntity.addProcessLine()` / `removeProcessLine()` as the reference
+   implementation.
+
+15. **Validators:** ALWAYS put business validation logic in a dedicated validator class in `services/validator/`, NEVER
     as private methods in the service. Inject the validator into the service.
 
    ```java
