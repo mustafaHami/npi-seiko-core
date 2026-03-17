@@ -1,5 +1,6 @@
 package my.lokalix.planning.core.services.validator;
 
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import my.lokalix.planning.core.exceptions.GenericWithMessageException;
 import my.lokalix.planning.core.models.entities.NpiOrderEntity;
@@ -30,6 +31,18 @@ public class NpiValidator {
     }
     if (body.getRow() == null || body.getRow() < 0) {
       throw new GenericWithMessageException("Row cannot be less than 0");
+    }
+  }
+
+  public void validateReportDateRange(LocalDate startDate, LocalDate endDate) {
+    if (startDate == null) {
+      throw new GenericWithMessageException("startDate cannot be null");
+    }
+    if (endDate == null) {
+      throw new GenericWithMessageException("endDate cannot be null");
+    }
+    if (startDate.isAfter(endDate)) {
+      throw new GenericWithMessageException("startDate cannot be after endDate");
     }
   }
 }

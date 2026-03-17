@@ -20,10 +20,7 @@ public abstract class NpiOrderMapper {
   public abstract NpiOrderEntity toNpiOrderEntity(SWNpiOrderCreate dto);
 
   @Mapping(source = "npiOrderId", target = "uid")
-  @Mapping(
-      source = "processLines",
-      target = "currentProcessName",
-      qualifiedByName = "getCurrentProcessName")
+  @Mapping(target = "currentProcessName", expression = "java(entity.getCurrentProcessName())")
   @Mapping(
       source = "processLines",
       target = "materialPurchasePlanTimeInHours",
@@ -59,18 +56,6 @@ public abstract class NpiOrderMapper {
   @Mapping(target = "processLines", ignore = true)
   public abstract void updateNpiOrderEntityFromDto(
       SWNpiOrderUpdate dto, @MappingTarget NpiOrderEntity entity);
-
-  @Named("getCurrentProcessName")
-  String getCurrentProcessName(List<ProcessLineEntity> processLines) {
-    if (CollectionUtils.isNotEmpty(processLines)) {
-      for (ProcessLineEntity line : processLines) {
-        if (!line.getStatus().isFinalStatus()) {
-          return line.getProcessName();
-        }
-      }
-    }
-    return processLines.getLast().getProcessName();
-  }
 
   @Named("getMaterialPurchasePlanTime")
   BigDecimal getMaterialPurchasePlanTime(List<ProcessLineEntity> processLines) {

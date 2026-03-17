@@ -548,6 +548,38 @@ paths:
                 $ref: '#/components/schemas/NpiOrder'
         '400':
           $ref: '#/components/responses/BadRequest'
+  /npi-orders/in-progress/export:
+    get:
+      tags:
+        - npi-order
+      summary: Generate in-progress NPI report
+      operationId: exportInProgressNPIOrder
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /npi-orders/archived/export:
+    get:
+      tags:
+        - npi-order
+      summary: Generate archived NPI report
+      operationId: exportArchivedNpiReport
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
   /npi-orders/{uid}/archive:
     parameters:
       - $ref: '#/components/parameters/uidParam'

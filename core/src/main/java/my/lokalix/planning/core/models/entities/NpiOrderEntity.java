@@ -90,6 +90,11 @@ public class NpiOrderEntity {
         .allMatch((pl) -> pl.getStatus().equals(ProcessLineStatus.COMPLETED))) {
       setStatus(NpiOrderStatus.COMPLETED);
     }
+    if (status == NpiOrderStatus.READY_TO_PRODUCTION
+        && processLines.stream()
+            .anyMatch((pl) -> pl.getStatus().equals(ProcessLineStatus.NOT_STARTED))) {
+      setStatus(NpiOrderStatus.STARTED);
+    }
   }
 
   public void setStatus(NpiOrderStatus status) {
@@ -116,6 +121,17 @@ public class NpiOrderEntity {
     for (int i = 0; i < processLines.size(); i++) {
       processLines.get(i).setIndexId(i);
     }
+  }
+
+  public String getCurrentProcessName() {
+    if (CollectionUtils.isNotEmpty(processLines)) {
+      for (ProcessLineEntity line : processLines) {
+        if (!line.getStatus().isFinalStatus()) {
+          return line.getProcessName();
+        }
+      }
+    }
+    return processLines.getLast().getProcessName();
   }
 
   @PrePersist

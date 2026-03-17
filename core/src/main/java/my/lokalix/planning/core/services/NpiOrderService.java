@@ -1,6 +1,7 @@
 package my.lokalix.planning.core.services;
 
 import jakarta.transaction.Transactional;
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -27,7 +28,7 @@ import my.lokalix.planning.core.repositories.ProcessLineStatusHistoryRepository;
 import my.lokalix.planning.core.repositories.ProcessRepository;
 import my.lokalix.planning.core.security.LoggedUserDetailsService;
 import my.lokalix.planning.core.services.helper.EntityRetrievalHelper;
-import my.lokalix.planning.core.services.helper.NpiForecastHelper;
+import my.lokalix.planning.core.services.helper.NpiOrderHelper;
 import my.lokalix.planning.core.services.validator.NpiValidator;
 import my.lokalix.planning.core.services.validator.ProcessLineValidator;
 import my.lokalix.planning.core.utils.ExcelUtils;
@@ -61,7 +62,7 @@ public class NpiOrderService {
   private final AppConfigurationProperties appConfigurationProperties;
   private final NpiValidator npiValidator;
   private final LoggedUserDetailsService loggedUserDetailsService;
-  private final NpiForecastHelper npiForecastHelper;
+  private final NpiOrderHelper npiOrderHelper;
 
   @Transactional
   public SWNpiOrder createNpiOrder(SWNpiOrderCreate body) {
@@ -105,7 +106,7 @@ public class NpiOrderService {
               }
             });
     calculateAndSetDeliveryDates(entity);
-    npiForecastHelper.recalculateForecastDeliveryDate(entity);
+    npiOrderHelper.recalculateForecastDeliveryDate(entity);
     return npiOrderMapper.toSWNpiOrder(npiOrderRepository.save(entity));
   }
 
@@ -197,12 +198,10 @@ public class NpiOrderService {
         loggedUserDetailsService.getLoggedUserReference());
     processLineRepository.save(line);
     resetFollowingLinesToDefaultState(npiOrder, line);
-    npiForecastHelper.recalculateForecastDeliveryDate(npiOrder);
+    npiOrderHelper.recalculateForecastDeliveryDate(npiOrder);
 
     npiOrderRepository.save(npiOrder);
-    if (!newStatus.equals(ProcessLineStatus.ABORTED)) {
-      npiOrder.checkIfAllLinesIsCompleted();
-    }
+    npiOrder.checkIfAllLinesIsCompleted();
 
     return processLineMapper.toListSWProcessLine(npiOrder.getProcessLines());
   }
@@ -244,6 +243,16 @@ public class NpiOrderService {
         };
 
     return populateNpiOrdersPaginatedResults(paginatedResults);
+  }
+
+  @Transactional
+  public byte[] exportInProgressNpiOrder() throws IOException {
+    return npiOrderHelper.buildInProgressNpiOrder();
+  }
+
+  @Transactional
+  public byte[] exportArchivedNpiOrder() throws IOException {
+    return npiOrderHelper.buildNpiOrderArchived();
   }
 
   private void buildProcessLines(
@@ -345,7 +354,7 @@ public class NpiOrderService {
             && body.getRemainingTimeInHours() != null
             && previousRemainingTimeInHours.compareTo(body.getRemainingTimeInHours()) != 0)) {
       processLineRepository.save(line);
-      npiForecastHelper.recalculateForecastDeliveryDate(npiOrder);
+      npiOrderHelper.recalculateForecastDeliveryDate(npiOrder);
       return processLineMapper.toSWProcessLine(line);
     }
     return processLineMapper.toSWProcessLine(processLineRepository.save(line));

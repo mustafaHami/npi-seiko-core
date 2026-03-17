@@ -1,19 +1,23 @@
 package my.lokalix.planning.core.repositories;
 
+import java.util.List;
 import java.util.UUID;
 import my.lokalix.planning.core.models.entities.NpiOrderEntity;
 import my.lokalix.planning.core.models.enums.NpiOrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
-
 public interface NpiOrderRepository extends JpaRepository<NpiOrderEntity, UUID> {
 
   List<NpiOrderEntity> findAllByArchivedFalse();
+
+  List<NpiOrderEntity> findByArchivedTrue(Sort sort);
+
+  List<NpiOrderEntity> findByArchivedFalseAndStatusNotIn(List<NpiOrderStatus> statuses, Sort sort);
 
   @Query(
       """

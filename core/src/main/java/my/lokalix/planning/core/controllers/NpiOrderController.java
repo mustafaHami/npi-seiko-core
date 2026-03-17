@@ -1,12 +1,19 @@
 package my.lokalix.planning.core.controllers;
 
 import jakarta.validation.Valid;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import my.lokalix.planning.core.configurations.AppConfigurationProperties;
 import my.lokalix.planning.core.models.enums.UserRole;
 import my.lokalix.planning.core.services.NpiOrderService;
+import my.lokalix.planning.core.utils.TimeUtils;
 import my.zkonsulting.planning.generated.model.*;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.annotation.Validated;
@@ -19,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class NpiOrderController {
 
   private final NpiOrderService npiOrderService;
+  private final AppConfigurationProperties appConfigurationProperties;
 
   @Secured({
     UserRole.SecurityConstants.ADMINISTRATOR,
@@ -61,7 +69,8 @@ public class NpiOrderController {
       @RequestParam(defaultValue = "20") int limit,
       @RequestParam SWArchivedFilter archivedFilter,
       @RequestBody SWNpiOrderSearch body) {
-    SWNpiOrdersPaginated result = npiOrderService.searchNpiOrders(offset, limit, archivedFilter, body);
+    SWNpiOrdersPaginated result =
+        npiOrderService.searchNpiOrders(offset, limit, archivedFilter, body);
     return new ResponseEntity<>(result, HttpStatus.OK);
   }
 
@@ -85,4 +94,60 @@ public class NpiOrderController {
     return new ResponseEntity<>(result, HttpStatus.OK);
   }
 
+
+  @Secured({
+    UserRole.SecurityConstants.ADMINISTRATOR,
+    UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
+  })
+  @PostMapping("/in-progress/export")
+  public ResponseEntity<byte[]> exportInProgressNPIOrder() throws IOException {
+    byte[] fileBytes = npiOrderService.exportInProgressNpiOrder();
+
+    LocalDateTime datetime =
+        TimeUtils.nowLocalDateTime(appConfigurationProperties.getAppTimezone());
+
+    // Set up the headers
+    String filename =
+        "in-progress-npi-orders-"
+            + datetime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
+            + ".xlsx";
+    HttpHeaders headers = new HttpHeaders();
+    headers.add("Content-Disposition", "attachment; filename=" + filename);
+    headers.add("filename", filename);
+
+    return ResponseEntity.ok()
+        .headers(headers)
+        .contentType(
+            MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+        .body(fileBytes);
+  }
+
+  @Secured({
+    UserRole.SecurityConstants.ADMINISTRATOR,
+    UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
+  })
+  @PostMapping("/archived/export")
+  public ResponseEntity<byte[]> exportArchivedNpiReport() throws IOException {
+    byte[] fileBytes = npiOrderService.exportArchivedNpiOrder();
+
+    LocalDateTime datetime =
+        TimeUtils.nowLocalDateTime(appConfigurationProperties.getAppTimezone());
+
+    // Set up the headers
+    String filename =
+        "archive-npi-orders"
+            + datetime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
+            + ".xlsx";
+    HttpHeaders headers = new HttpHeaders();
+    headers.add("Content-Disposition", "attachment; filename=" + filename);
+    headers.add("filename", filename);
+
+    return ResponseEntity.ok()
+        .headers(headers)
+        .contentType(
+            MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+        .body(fileBytes);
+  }
 }
