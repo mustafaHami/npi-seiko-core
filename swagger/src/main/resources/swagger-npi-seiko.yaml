@@ -671,7 +671,7 @@ paths:
     get:
       tags:
         - npi-order
-      summary: Retrieve a npi order process instance
+      summary: Retrieve a npi order process
       operationId: retriveNpiOrderProcess
       responses:
         '200':
@@ -679,7 +679,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProcessInstance"
+                $ref: "#/components/schemas/Process"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -693,14 +693,14 @@ paths:
     post:
       tags:
         - npi-order
-      summary: update a npi order's instance process line status
+      summary: update a npi order process line status
       operationId: updateNpiOrderProcessLineStatus
       requestBody:
         description: New recipe line status
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProcessInstanceLineStatusUpdateBody'
+              $ref: '#/components/schemas/ProcessLineStatusUpdateBody'
         required: true
       responses:
         '200':
@@ -708,7 +708,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OutputProcessInstanceLineUpdate"
+                $ref: "#/components/schemas/OutputProcessLineUpdate"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -724,15 +724,15 @@ paths:
     get:
       tags:
         - npi-order
-      summary: Retrieve a npi order process instance line statuses history
-      operationId: retrieveNpiOrderInstanceStatusesHistory
+      summary: Retrieve a npi order process line statuses history
+      operationId: retrieveNpiOrderStatusesHistory
       responses:
         '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProcessInstanceLineStatusesHistory"
+                $ref: "#/components/schemas/ProcessLineStatusesHistory"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -924,7 +924,7 @@ components:
       type: object
       properties:
         status:
-          $ref: '#/components/schemas/ProcessInstanceLineStatus'
+          $ref: '#/components/schemas/ProcessLineStatus'
         count:
           type: integer
 
@@ -1154,15 +1154,15 @@ components:
           type: string
         active:
           type: boolean
-    ProcessInstanceLineStatusesHistory:
+    ProcessLineStatusesHistory:
       type: array
       items:
-        $ref: '#/components/schemas/ProcessInstanceLineStatusHistory'
-    ProcessInstanceLineStatusHistory:
+        $ref: '#/components/schemas/ProcessLineStatusHistory'
+    ProcessLineStatusHistory:
       type: object
       properties:
         status:
-          $ref: '#/components/schemas/ProcessInstanceLineStatus'
+          $ref: '#/components/schemas/ProcessLineStatus'
         startDate:
           type: string
           format: date-time
@@ -1171,32 +1171,32 @@ components:
           format: date-time
         byUser:
           $ref: '#/components/schemas/UserSummary'
-    ProcessInstanceLineStatusUpdateBody:
+    ProcessLineStatusUpdateBody:
       type: object
       required:
         - status
       properties:
         status:
-          $ref: '#/components/schemas/ProcessInstanceLineStatus'
+          $ref: '#/components/schemas/ProcessLineStatus'
         remainingTime:
           type: number
           format: double
-        materialLastDeliveryDate:
+        materialLatestDeliveryDate:
           type: string
           format: date
         planTime:
           type: number
           format: double
-    OutputProcessInstanceLineUpdate:
+    OutputProcessLineUpdate:
       type: object
       required:
-        - updatedProcessInstanceLine
+        - updatedProcessLine
       properties:
         processIsCompleted:
           type: boolean
-        updatedProcessInstanceLine:
-          $ref: "#/components/schemas/ProcessInstanceLine"
-    ProcessInstance:
+        updatedProcessLine:
+          $ref: "#/components/schemas/ProcessLine"
+    Process:
       type: object
       required:
         - uid
@@ -1210,8 +1210,8 @@ components:
         lines:
           type: array
           items:
-            $ref: "#/components/schemas/ProcessInstanceLine"
-    ProcessInstanceLine:
+            $ref: "#/components/schemas/ProcessLine"
+    ProcessLine:
       type: object
       required:
         - processName
@@ -1222,11 +1222,11 @@ components:
         processName:
           type: string
         status:
-          $ref: "#/components/schemas/ProcessInstanceLineStatus"
+          $ref: "#/components/schemas/ProcessLineStatus"
         remainingDuration:
           type: number
           format: double
-        materialLastDeliveryDate:
+        materialLatestDeliveryDate:
           type: string
           format: date
         planTime:
@@ -1234,6 +1234,14 @@ components:
           format: double
         nbFiles:
           type: integer
+        isMaterialPurchase:
+          type: boolean
+        isShipment:
+          type: boolean
+        isProduction:
+          type: boolean
+        isTesting:
+          type: boolean
     NpiOrdersPaginated:
       type: object
       allOf:
@@ -1253,6 +1261,8 @@ components:
         - workOrderId
         - partNumber
         - quantity
+        - productionPlanTime
+        - testingPlanTime
       properties:
         purchaseOrderNumber:
           type: string
@@ -1267,10 +1277,17 @@ components:
           format: date
         targetDeliveryDate:
           type: string
+          format: date
         customerName:
           type: string
         productName:
           type: string
+        productionPlanTime:
+          type: number
+          format: double
+        testingPlanTime:
+          type: number
+          format: double
     NpiOrderUpdate:
       type: object
       required:
@@ -1278,6 +1295,8 @@ components:
         - workOrderId
         - partNumber
         - quantity
+        - productionPlanTime
+        - testingPlanTime
       properties:
         purchaseOrderNumber:
           type: string
@@ -1292,10 +1311,17 @@ components:
           format: date
         targetDeliveryDate:
           type: string
+          format: date
         customerName:
           type: string
         productName:
           type: string
+        productionPlanTime:
+          type: number
+          format: double
+        testingPlanTime:
+          type: number
+          format: double
     NpiOrder:
       type: object
       required:
@@ -1326,6 +1352,7 @@ components:
           format: date
         targetDeliveryDate:
           type: string
+          format: date
         customerName:
           type: string
         productName:
@@ -1366,10 +1393,10 @@ components:
         - STARTED
         - COMPLETED
         - ABORTED
-    ProcessInstanceLineStatus:
+    ProcessLineStatus:
       type: string
       enum:
-        - NOT_SARTED
+        - NOT_STARTED
         - IN_PROGRESS
         - COMPLETED
         - ABORTED

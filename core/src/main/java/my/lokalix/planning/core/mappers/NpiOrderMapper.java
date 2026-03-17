@@ -25,6 +25,7 @@ public abstract class NpiOrderMapper {
   @Mapping(target = "archived", ignore = true)
   @Mapping(target = "npiOrderId", ignore = true)
   @Mapping(target = "creationDate", ignore = true)
+  @Mapping(target = "processLines", ignore = true)
   public abstract void updateNpiOrderEntityFromDto(
       SWNpiOrderUpdate dto, @MappingTarget NpiOrderEntity entity);
 }

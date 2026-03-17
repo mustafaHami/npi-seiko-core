@@ -1,15 +1,27 @@
 package my.lokalix.planning.core.services;
 
 import jakarta.transaction.Transactional;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import my.lokalix.planning.core.configurations.AppConfigurationProperties;
 import my.lokalix.planning.core.exceptions.GenericWithMessageException;
 import my.lokalix.planning.core.mappers.NpiOrderMapper;
+import my.lokalix.planning.core.mappers.ProcessLineMapper;
 import my.lokalix.planning.core.models.entities.NpiOrderEntity;
+import my.lokalix.planning.core.models.entities.ProcessEntity;
+import my.lokalix.planning.core.models.entities.ProcessLineEntity;
 import my.lokalix.planning.core.models.enums.NpiOrderStatus;
+import my.lokalix.planning.core.models.enums.ProcessLineStatus;
 import my.lokalix.planning.core.repositories.NpiOrderRepository;
+import my.lokalix.planning.core.repositories.ProcessLineRepository;
+import my.lokalix.planning.core.repositories.ProcessRepository;
 import my.lokalix.planning.core.services.helper.EntityRetrievalHelper;
+import my.lokalix.planning.core.services.validator.NpiValidator;
+import my.lokalix.planning.core.services.validator.ProcessLineValidator;
 import my.lokalix.planning.core.utils.TimeUtils;
 import my.zkonsulting.planning.generated.model.*;
 import org.apache.commons.collections4.CollectionUtils;
@@ -25,13 +37,35 @@ import org.springframework.stereotype.Service;
 public class NpiOrderService {
 
   private final NpiOrderMapper npiOrderMapper;
+  private final ProcessLineMapper processLineMapper;
   private final NpiOrderRepository npiOrderRepository;
+  private final ProcessRepository processRepository;
+  private final ProcessLineRepository processLineRepository;
   private final EntityRetrievalHelper entityRetrievalHelper;
+  private final ProcessLineValidator processLineValidator;
+  private final AppConfigurationProperties appConfigurationProperties;
+  private final NpiValidator npiValidator;
 
   @Transactional
   public SWNpiOrder createNpiOrder(SWNpiOrderCreate body) {
+    List<ProcessEntity> processes = processRepository.findAllByOrderByOrderIndexAsc();
+    if (CollectionUtils.isEmpty(processes)) {
+      throw new GenericWithMessageException(
+          "Default processes have not been initialized", SWCustomErrorCode.GENERIC_ERROR);
+    }
+
     NpiOrderEntity entity = npiOrderMapper.toNpiOrderEntity(body);
-    return npiOrderMapper.toSWNpiOrder(npiOrderRepository.save(entity));
+    calculateAndSetDeliveryDates(entity, body.getProductionPlanTime(), body.getTestingPlanTime());
+
+    NpiOrderEntity savedEntity = npiOrderRepository.save(entity);
+
+    List<ProcessLineEntity> processLines =
+        buildProcessLines(
+            savedEntity, processes, body.getProductionPlanTime(), body.getTestingPlanTime());
+    processLineRepository.saveAll(processLines);
+    savedEntity.setProcessLines(processLines);
+
+    return npiOrderMapper.toSWNpiOrder(savedEntity);
   }
 
   @Transactional
@@ -49,6 +83,19 @@ public class NpiOrderService {
           SWCustomErrorCode.GENERIC_ERROR);
     }
     npiOrderMapper.updateNpiOrderEntityFromDto(body, entity);
+
+    List<ProcessLineEntity> lines = entity.getProcessLines();
+    lines.forEach(
+        line -> {
+          if (line.getIsProduction() && body.getProductionPlanTime() != null) {
+            line.setPlanTime(body.getProductionPlanTime());
+          } else if (line.getIsTesting() && body.getTestingPlanTime() != null) {
+            line.setPlanTime(body.getTestingPlanTime());
+          }
+        });
+
+    calculateAndSetDeliveryDates(entity, body.getProductionPlanTime(), body.getTestingPlanTime());
+
     return npiOrderMapper.toSWNpiOrder(npiOrderRepository.save(entity));
   }
 
@@ -74,6 +121,57 @@ public class NpiOrderService {
   }
 
   @Transactional
+  public SWProcess retrieveNpiOrderProcess(UUID npiOrderUid) {
+    NpiOrderEntity npiOrder = entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
+    List<ProcessLineEntity> lines =
+        processLineRepository.findAllByNpiOrderOrderByOrderIndexAsc(npiOrder);
+
+    SWProcess process = new SWProcess();
+    process.setUid(npiOrder.getNpiOrderId());
+    process.setPartNumber(npiOrder.getPartNumber());
+    process.setLines(processLineMapper.toListSWProcessLine(lines));
+    return process;
+  }
+
+  @Transactional
+  public SWOutputProcessLineUpdate updateNpiOrderProcessLineStatus(
+      UUID npiOrderUid, UUID lineUid, SWProcessLineStatusUpdateBody body) {
+    NpiOrderEntity npiOrder = entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
+    ProcessLineEntity line = entityRetrievalHelper.getMustExistProcessLineById(lineUid);
+    npiValidator.validateNpiUpdatable(npiOrder);
+    processLineValidator.validateStatusUpdate(line, body);
+
+    ProcessLineStatus newStatus = ProcessLineStatus.fromValue(body.getStatus().getValue());
+    line.setStatus(newStatus);
+
+    if (newStatus == ProcessLineStatus.IN_PROGRESS) {
+      if (line.getIsMaterialPurchase()) {
+        line.setMaterialLatestDeliveryDate(body.getMaterialLatestDeliveryDate());
+      }
+      if (line.getIsProduction() || line.getIsTesting()) {
+        line.setRemainingDuration(body.getRemainingTime());
+        recalculateForecastDeliveryDate(npiOrder, line);
+      }
+    }
+
+    if (newStatus == ProcessLineStatus.COMPLETED && line.getIsShipment()) {
+      npiOrder.setShippingDate(TimeUtils.nowLocalDate(appConfigurationProperties.getAppTimezone()));
+      npiOrderRepository.save(npiOrder);
+    }
+
+    ProcessLineEntity savedLine = processLineRepository.save(line);
+
+    List<ProcessLineEntity> allLines =
+        processLineRepository.findAllByNpiOrderOrderByOrderIndexAsc(npiOrder);
+    boolean processIsCompleted = allLines.stream().allMatch(l -> l.getStatus().isFinalStatus());
+
+    SWOutputProcessLineUpdate output = new SWOutputProcessLineUpdate();
+    output.setUpdatedProcessLine(processLineMapper.toSWProcessLine(savedLine));
+    output.setProcessIsCompleted(processIsCompleted);
+    return output;
+  }
+
+  @Transactional
   public SWNpiOrdersPaginated searchNpiOrders(
       int offset, int limit, SWArchivedFilter archivedFilter, SWNpiOrderSearch body) {
     Sort sort = Sort.by(Sort.Direction.DESC, "creationDate");
@@ -84,9 +182,7 @@ public class NpiOrderService {
 
     List<NpiOrderStatus> statuses =
         hasStatusFilter
-            ? body.getStatuses().stream()
-                .map(s -> NpiOrderStatus.fromValue(s.getValue()))
-                .toList()
+            ? body.getStatuses().stream().map(s -> NpiOrderStatus.fromValue(s.getValue())).toList()
             : null;
 
     Page<NpiOrderEntity> paginatedResults =
@@ -103,8 +199,7 @@ public class NpiOrderService {
                       : npiOrderRepository.findAllByArchivedFalse(pageable);
           case ARCHIVED_ONLY ->
               hasSearchText
-                  ? npiOrderRepository.findBySearchAndArchivedTrue(
-                      pageable, body.getSearchText())
+                  ? npiOrderRepository.findBySearchAndArchivedTrue(pageable, body.getSearchText())
                   : npiOrderRepository.findAllByArchivedTrue(pageable);
           default ->
               hasSearchText
@@ -113,6 +208,70 @@ public class NpiOrderService {
         };
 
     return populateNpiOrdersPaginatedResults(paginatedResults);
+  }
+
+  private List<ProcessLineEntity> buildProcessLines(
+      NpiOrderEntity npiOrder,
+      List<ProcessEntity> processes,
+      BigDecimal productionPlanTime,
+      BigDecimal testingPlanTime) {
+    List<ProcessLineEntity> lines = new ArrayList<>();
+    for (ProcessEntity process : processes) {
+      ProcessLineEntity line = new ProcessLineEntity();
+      line.setNpiOrder(npiOrder);
+      line.setProcessName(process.getName());
+      line.setOrderIndex(process.getOrderIndex());
+      line.setIsMaterialPurchase(process.getIsMaterialPurchase());
+      line.setIsProduction(process.getIsProduction());
+      line.setIsTesting(process.getIsTesting());
+      line.setIsShipment(process.getIsShipment());
+      if (process.getHasPlanTime()) {
+        if (process.getIsProduction()) {
+          line.setPlanTime(productionPlanTime);
+        } else if (process.getIsTesting()) {
+          line.setPlanTime(testingPlanTime);
+        }
+      }
+      lines.add(line);
+    }
+    return lines;
+  }
+
+  private void recalculateForecastDeliveryDate(
+      NpiOrderEntity npiOrder, ProcessLineEntity updatedLine) {
+    List<ProcessLineEntity> allLines =
+        processLineRepository.findAllByNpiOrderOrderByOrderIndexAsc(npiOrder);
+
+    LocalDate today = TimeUtils.nowLocalDate(appConfigurationProperties.getAppTimezone());
+
+    double totalForecastDays = 0;
+    for (ProcessLineEntity l : allLines) {
+      boolean isCurrentLine = l.getProcessLineId().equals(updatedLine.getProcessLineId());
+      ProcessLineStatus status = isCurrentLine ? updatedLine.getStatus() : l.getStatus();
+      BigDecimal remainingDuration =
+          isCurrentLine ? updatedLine.getRemainingDuration() : l.getRemainingDuration();
+      BigDecimal planTime = l.getPlanTime();
+
+      if (status == ProcessLineStatus.IN_PROGRESS && remainingDuration != null) {
+        totalForecastDays += remainingDuration.doubleValue();
+      } else if (status == ProcessLineStatus.NOT_STARTED && planTime != null) {
+        totalForecastDays += planTime.doubleValue();
+      }
+    }
+
+    npiOrder.setForecastDeliveryDate(today.plusDays(Math.round(totalForecastDays)));
+    npiOrderRepository.save(npiOrder);
+  }
+
+  private void calculateAndSetDeliveryDates(
+      NpiOrderEntity entity, BigDecimal productionPlanTime, BigDecimal testingPlanTime) {
+    if (entity.getOrderDate() == null || productionPlanTime == null || testingPlanTime == null) {
+      return;
+    }
+    long totalDays = Math.round(productionPlanTime.add(testingPlanTime).doubleValue());
+    LocalDate plannedDate = entity.getOrderDate().plusDays(totalDays);
+    entity.setPlannedDeliveryDate(plannedDate);
+    entity.setForecastDeliveryDate(plannedDate);
   }
 
   private SWNpiOrdersPaginated populateNpiOrdersPaginatedResults(

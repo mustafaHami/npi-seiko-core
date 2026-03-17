@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
@@ -43,7 +45,7 @@ public class NpiOrderEntity {
 
   private LocalDate orderDate;
 
-  private String targetDeliveryDate;
+  private LocalDate targetDeliveryDate;
 
   private String customerName;
 
@@ -85,6 +87,9 @@ public class NpiOrderEntity {
   @NotBlank
   @Column(columnDefinition = "TEXT", nullable = false)
   private String searchableConcatenatedFields;
+
+  @OneToMany(mappedBy = "npiOrder", fetch = FetchType.LAZY)
+  private List<ProcessLineEntity> processLines = new ArrayList<>();
 
   @PrePersist
   @PreUpdate
