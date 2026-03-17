@@ -3,6 +3,7 @@ package my.lokalix.planning.core.services.validator;
 import lombok.RequiredArgsConstructor;
 import my.lokalix.planning.core.exceptions.GenericWithMessageException;
 import my.lokalix.planning.core.models.entities.NpiOrderEntity;
+import my.zkonsulting.planning.generated.model.SWProcessLineMaterialDeliveryDateImport;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,5 +15,21 @@ public class NpiValidator {
     }
     if (npiOrder.getStatus().isFinalStatus())
       throw new GenericWithMessageException("NPI order cannot be updated after final status");
+  }
+
+  public void validateNpiMaterialDeliveryDateFileConfig(
+      SWProcessLineMaterialDeliveryDateImport body) {
+    if (body == null) {
+      throw new GenericWithMessageException("Material delivery date file config cannot be null");
+    }
+    if (body.getSheetIndex() == null || body.getSheetIndex() < 0) {
+      throw new GenericWithMessageException("Sheet index cannot be less than 0");
+    }
+    if (body.getColumn() == null || body.getColumn() < 0) {
+      throw new GenericWithMessageException("Column cannot be less than 0");
+    }
+    if (body.getRow() == null || body.getRow() < 0) {
+      throw new GenericWithMessageException("Row cannot be less than 0");
+    }
   }
 }

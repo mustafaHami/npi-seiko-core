@@ -1,8 +1,10 @@
 package my.lokalix.planning.core.controllers;
 
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import my.lokalix.planning.core.services.NpiOrderService;
 import my.zkonsulting.planning.generated.model.*;
@@ -40,6 +42,15 @@ public class NpiOrderProcessController {
       @PathVariable final UUID uid, @PathVariable final UUID lineUid) {
     List<SWProcessLineStatusHistory> result =
         npiOrderService.retrieveNpiOrderProcessLineStatusesHistory(uid, lineUid);
+    return new ResponseEntity<>(result, HttpStatus.OK);
+  }
+
+  @PostMapping("/lines/{lineUid}/material-delivery-date/import")
+  public ResponseEntity<LocalDate> importMaterialLatestDeliveryDate(
+      @PathVariable final UUID uid,
+      @PathVariable final UUID lineUid,
+      @Valid @RequestBody SWProcessLineMaterialDeliveryDateImport body) {
+    LocalDate result = npiOrderService.importMaterialLatestDeliveryDate(uid, lineUid, body);
     return new ResponseEntity<>(result, HttpStatus.OK);
   }
 }

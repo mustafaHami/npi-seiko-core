@@ -1,7 +1,10 @@
 package my.lokalix.planning.core.services;
 
 import jakarta.transaction.Transactional;
+import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -11,6 +14,7 @@ import my.lokalix.planning.core.exceptions.GenericWithMessageException;
 import my.lokalix.planning.core.mappers.NpiOrderMapper;
 import my.lokalix.planning.core.mappers.ProcessLineMapper;
 import my.lokalix.planning.core.mappers.ProcessLineStatusHistoryMapper;
+import my.lokalix.planning.core.models.entities.FileInfoEntity;
 import my.lokalix.planning.core.models.entities.NpiOrderEntity;
 import my.lokalix.planning.core.models.entities.ProcessEntity;
 import my.lokalix.planning.core.models.entities.ProcessLineEntity;
@@ -25,10 +29,15 @@ import my.lokalix.planning.core.security.LoggedUserDetailsService;
 import my.lokalix.planning.core.services.helper.EntityRetrievalHelper;
 import my.lokalix.planning.core.services.validator.NpiValidator;
 import my.lokalix.planning.core.services.validator.ProcessLineValidator;
+import my.lokalix.planning.core.utils.ExcelUtils;
 import my.lokalix.planning.core.utils.TimeUtils;
 import my.zkonsulting.planning.generated.model.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -275,6 +284,55 @@ public class NpiOrderService {
     entity.setForecastDeliveryDate(plannedDate);
   }
 
+  public LocalDate importMaterialLatestDeliveryDate(
+      UUID npiOrderUid, UUID lineUid, SWProcessLineMaterialDeliveryDateImport body) {
+    entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
+    ProcessLineEntity line = entityRetrievalHelper.getMustExistProcessLineById(lineUid);
+
+    if (!line.getIsMaterialPurchase()) {
+      throw new GenericWithMessageException(
+          "This step is not a material purchase step", SWCustomErrorCode.GENERIC_ERROR);
+    }
+    npiValidator.validateNpiMaterialDeliveryDateFileConfig(body);
+    FileInfoEntity fileInfo = entityRetrievalHelper.getMustExistFileEntity(body.getFileUid());
+    String filePath =
+        appConfigurationProperties.getTemporaryFilesPathDirectory()
+            + fileInfo.getFileId()
+            + "/"
+            + fileInfo.getFileName();
+
+    try (InputStream is = Files.newInputStream(Paths.get(filePath));
+        Workbook workbook = WorkbookFactory.create(is)) {
+
+      Sheet sheet = workbook.getSheetAt(body.getSheetIndex() - 1);
+      if (sheet == null) {
+        throw new GenericWithMessageException(
+            "Sheet not found at index " + body.getSheetIndex(), SWCustomErrorCode.GENERIC_ERROR);
+      }
+      var row = sheet.getRow(body.getRow() - 1);
+      if (row == null) {
+        throw new GenericWithMessageException(
+            "Row not found at index " + body.getRow(), SWCustomErrorCode.GENERIC_ERROR);
+      }
+      Cell cell = row.getCell(body.getColumn() - 1);
+      if (cell == null) {
+        throw new GenericWithMessageException(
+            "Cell not found at column " + body.getColumn(), SWCustomErrorCode.GENERIC_ERROR);
+      }
+      LocalDate deliveryDate = ExcelUtils.loadDateCell(cell);
+      if (deliveryDate == null) {
+        throw new GenericWithMessageException(
+            "No date found in the specified cell", SWCustomErrorCode.GENERIC_ERROR);
+      }
+      return deliveryDate;
+    } catch (GenericWithMessageException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new GenericWithMessageException(
+          "Failed to read file: " + e.getMessage(), SWCustomErrorCode.GENERIC_ERROR);
+    }
+  }
+
   @Transactional
   public List<SWProcessLineStatusHistory> retrieveNpiOrderProcessLineStatusesHistory(
       UUID npiOrderUid, UUID lineUid) {
@@ -296,5 +354,4 @@ public class NpiOrderService {
     result.setHasNext(paginatedResults.hasNext());
     return result;
   }
-
 }

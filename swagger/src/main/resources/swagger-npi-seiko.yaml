@@ -739,6 +739,35 @@ paths:
           $ref: '#/components/responses/UnauthorizedRequest'
         '403':
           $ref: '#/components/responses/ForbiddenRequest'
+  /npi-orders/{uid}/process/lines/{lineUid}/material-delivery-date/import:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+      - $ref: '#/components/parameters/lineUidParam'
+    post:
+      tags:
+        - npi-order
+      summary: Read material latest delivery date from an uploaded file
+      operationId: importMaterialLatestDeliveryDate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessLineMaterialDeliveryDateImport'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+                format: date
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedRequest'
+        '403':
+          $ref: '#/components/responses/ForbiddenRequest'
   /npi-orders/{uid}/process/lines/{lineUid}/upload:
     parameters:
       - $ref: '#/components/parameters/uidParam'
@@ -1171,6 +1200,25 @@ components:
           format: date-time
         byUser:
           $ref: '#/components/schemas/UserSummary'
+    ProcessLineMaterialDeliveryDateImport:
+      type: object
+      required:
+        - fileUid
+        - sheetIndex
+        - column
+        - row
+      properties:
+        fileUid:
+          $ref: '#/components/schemas/Uid'
+        sheetIndex:
+          type: integer
+          description: 0-based sheet index in the workbook
+        column:
+          type: integer
+          description: 0-based column index in the sheet
+        row:
+          type: integer
+          description: 0-based row index in the sheet
     ProcessLineStatusUpdateBody:
       type: object
       required:
