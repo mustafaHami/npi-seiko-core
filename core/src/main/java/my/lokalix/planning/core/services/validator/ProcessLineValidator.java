@@ -16,7 +16,7 @@ public class ProcessLineValidator {
 
     ProcessLineStatus newStatus = ProcessLineStatus.fromValue(body.getStatus().getValue());
 
-    if (newStatus == ProcessLineStatus.IN_PROGRESS || newStatus == ProcessLineStatus.COMPLETED) {
+    if (newStatus == ProcessLineStatus.IN_PROGRESS) {
       if (line.getIsMaterialPurchase() && body.getMaterialLatestDeliveryDate() == null) {
         throw new GenericWithMessageException(
             "Latest delivery date is required to start this step", SWCustomErrorCode.GENERIC_ERROR);
@@ -29,6 +29,11 @@ public class ProcessLineValidator {
         throw new GenericWithMessageException(
             "Remaining time is required to start Testing", SWCustomErrorCode.GENERIC_ERROR);
       }
+    }
+    if (newStatus == ProcessLineStatus.COMPLETED
+        && !line.getStatus().equals(ProcessLineStatus.IN_PROGRESS)) {
+      throw new GenericWithMessageException(
+          "Cannot complete a step that is not in progress", SWCustomErrorCode.GENERIC_ERROR);
     }
   }
 }

@@ -7,9 +7,7 @@ public enum ProcessLineStatus {
 
   IN_PROGRESS("IN_PROGRESS", "In Progress"),
 
-  COMPLETED("COMPLETED", "Completed"),
-
-  ABORTED("ABORTED", "Aborted");
+  COMPLETED("COMPLETED", "Completed");
 
   private final String value;
   @Getter private final String humanReadableValue;
@@ -17,10 +15,6 @@ public enum ProcessLineStatus {
   ProcessLineStatus(String value, String humanReadableValue) {
     this.value = value;
     this.humanReadableValue = humanReadableValue;
-  }
-
-  public String getValue() {
-    return value;
   }
 
   public static ProcessLineStatus fromValue(String value) {
@@ -32,12 +26,16 @@ public enum ProcessLineStatus {
     throw new IllegalArgumentException("Unexpected value '" + value + "'");
   }
 
+  public String getValue() {
+    return value;
+  }
+
   @Override
   public String toString() {
     return String.valueOf(value);
   }
 
   public boolean isFinalStatus() {
-    return this.equals(COMPLETED) || this.equals(ABORTED);
+    return this.equals(COMPLETED);
   }
 }

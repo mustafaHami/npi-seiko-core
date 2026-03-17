@@ -58,8 +58,6 @@ public class NpiOrderEntity {
   @Enumerated(EnumType.STRING)
   private NpiOrderStatus status = NpiOrderStatus.READY_TO_PRODUCTION;
 
-  private String currentProcessStepName;
-
   @Column(nullable = false)
   private OffsetDateTime updatedAt = TimeUtils.nowOffsetDateTimeUTC();
 

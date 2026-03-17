@@ -1359,7 +1359,7 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/NpiOrderStatus'
-        currentProcessStepName:
+        currentProcessName:
           type: string
         creationDate:
           type: string
@@ -1399,7 +1399,6 @@ components:
         - NOT_STARTED
         - IN_PROGRESS
         - COMPLETED
-        - ABORTED
     CustomError:
       type: object
       required:
