@@ -1308,6 +1308,12 @@ components:
         materialLatestDeliveryDate:
           type: string
           format: date
+        shippingDate:
+          type: string
+          format: date
+        customerApprovalDate:
+          type: string
+          format: date
         planTimeInHours:
           type: number
           format: double
