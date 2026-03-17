@@ -8,5 +8,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ProcessLineRepository extends JpaRepository<ProcessLineEntity, UUID> {
 
-  List<ProcessLineEntity> findAllByNpiOrderOrderByOrderIndexAsc(NpiOrderEntity npiOrder);
+  List<ProcessLineEntity> findAllByNpiOrderOrderByIndexIdAsc(NpiOrderEntity npiOrder);
 }

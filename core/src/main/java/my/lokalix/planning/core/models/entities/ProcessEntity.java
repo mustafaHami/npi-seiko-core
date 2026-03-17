@@ -28,10 +28,6 @@ public class ProcessEntity {
 
   @NotNull
   @Column(nullable = false)
-  private Integer orderIndex;
-
-  @NotNull
-  @Column(nullable = false)
   private Boolean hasPlanTime = false;
 
   @NotNull

@@ -24,45 +24,44 @@ public class DefaultProcessInitializer implements ApplicationRunner {
     log.info("Initializing default processes...");
 
     processRepository.save(buildMaterialPurchase());
-    processRepository.save(buildProcess("Material Receiving", 2));
+    processRepository.save(buildProcess("Material Receiving"));
     processRepository.save(buildProduction());
     processRepository.save(buildTesting());
     processRepository.save(buildShipment());
-    processRepository.save(buildProcess("Customer Approval", 6));
+    processRepository.save(buildProcess("Customer Approval"));
 
     log.info("Default processes initialized successfully.");
   }
 
   private ProcessEntity buildMaterialPurchase() {
-    ProcessEntity p = buildProcess("Material Purchase", 1);
+    ProcessEntity p = buildProcess("Material Purchase");
     p.setIsMaterialPurchase(true);
     return p;
   }
 
   private ProcessEntity buildProduction() {
-    ProcessEntity p = buildProcess("Production", 3);
+    ProcessEntity p = buildProcess("Production");
     p.setHasPlanTime(true);
     p.setIsProduction(true);
     return p;
   }
 
   private ProcessEntity buildTesting() {
-    ProcessEntity p = buildProcess("Testing", 4);
+    ProcessEntity p = buildProcess("Testing");
     p.setHasPlanTime(true);
     p.setIsTesting(true);
     return p;
   }
 
   private ProcessEntity buildShipment() {
-    ProcessEntity p = buildProcess("Shipping", 5);
+    ProcessEntity p = buildProcess("Shipping");
     p.setIsShipment(true);
     return p;
   }
 
-  private ProcessEntity buildProcess(String name, int orderIndex) {
+  private ProcessEntity buildProcess(String name) {
     ProcessEntity process = new ProcessEntity();
     process.setName(name);
-    process.setOrderIndex(orderIndex);
     return process;
   }
 }

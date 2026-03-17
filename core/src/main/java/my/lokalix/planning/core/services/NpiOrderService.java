@@ -3,7 +3,6 @@ package my.lokalix.planning.core.services;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +47,7 @@ public class NpiOrderService {
 
   @Transactional
   public SWNpiOrder createNpiOrder(SWNpiOrderCreate body) {
-    List<ProcessEntity> processes = processRepository.findAllByOrderByOrderIndexAsc();
+    List<ProcessEntity> processes = processRepository.findAllByOrderByCreationDateAsc();
     if (CollectionUtils.isEmpty(processes)) {
       throw new GenericWithMessageException(
           "Default processes have not been initialized", SWCustomErrorCode.GENERIC_ERROR);
@@ -57,13 +56,8 @@ public class NpiOrderService {
     NpiOrderEntity entity = npiOrderMapper.toNpiOrderEntity(body);
     calculateAndSetDeliveryDates(entity, body.getProductionPlanTime(), body.getTestingPlanTime());
 
+    buildProcessLines(entity, processes, body.getProductionPlanTime(), body.getTestingPlanTime());
     NpiOrderEntity savedEntity = npiOrderRepository.save(entity);
-
-    List<ProcessLineEntity> processLines =
-        buildProcessLines(
-            savedEntity, processes, body.getProductionPlanTime(), body.getTestingPlanTime());
-    processLineRepository.saveAll(processLines);
-    savedEntity.setProcessLines(processLines);
 
     return npiOrderMapper.toSWNpiOrder(savedEntity);
   }
@@ -124,7 +118,7 @@ public class NpiOrderService {
   public SWProcess retrieveNpiOrderProcess(UUID npiOrderUid) {
     NpiOrderEntity npiOrder = entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
     List<ProcessLineEntity> lines =
-        processLineRepository.findAllByNpiOrderOrderByOrderIndexAsc(npiOrder);
+        processLineRepository.findAllByNpiOrderOrderByIndexIdAsc(npiOrder);
 
     SWProcess process = new SWProcess();
     process.setUid(npiOrder.getNpiOrderId());
@@ -162,7 +156,7 @@ public class NpiOrderService {
     ProcessLineEntity savedLine = processLineRepository.save(line);
 
     List<ProcessLineEntity> allLines =
-        processLineRepository.findAllByNpiOrderOrderByOrderIndexAsc(npiOrder);
+        processLineRepository.findAllByNpiOrderOrderByIndexIdAsc(npiOrder);
     boolean processIsCompleted = allLines.stream().allMatch(l -> l.getStatus().isFinalStatus());
 
     SWOutputProcessLineUpdate output = new SWOutputProcessLineUpdate();
@@ -210,17 +204,14 @@ public class NpiOrderService {
     return populateNpiOrdersPaginatedResults(paginatedResults);
   }
 
-  private List<ProcessLineEntity> buildProcessLines(
+  private void buildProcessLines(
       NpiOrderEntity npiOrder,
       List<ProcessEntity> processes,
       BigDecimal productionPlanTime,
       BigDecimal testingPlanTime) {
-    List<ProcessLineEntity> lines = new ArrayList<>();
     for (ProcessEntity process : processes) {
       ProcessLineEntity line = new ProcessLineEntity();
-      line.setNpiOrder(npiOrder);
       line.setProcessName(process.getName());
-      line.setOrderIndex(process.getOrderIndex());
       line.setIsMaterialPurchase(process.getIsMaterialPurchase());
       line.setIsProduction(process.getIsProduction());
       line.setIsTesting(process.getIsTesting());
@@ -232,15 +223,14 @@ public class NpiOrderService {
           line.setPlanTime(testingPlanTime);
         }
       }
-      lines.add(line);
+      npiOrder.addProcessLine(line);
     }
-    return lines;
   }
 
   private void recalculateForecastDeliveryDate(
       NpiOrderEntity npiOrder, ProcessLineEntity updatedLine) {
     List<ProcessLineEntity> allLines =
-        processLineRepository.findAllByNpiOrderOrderByOrderIndexAsc(npiOrder);
+        processLineRepository.findAllByNpiOrderOrderByIndexIdAsc(npiOrder);
 
     LocalDate today = TimeUtils.nowLocalDate(appConfigurationProperties.getAppTimezone());
 

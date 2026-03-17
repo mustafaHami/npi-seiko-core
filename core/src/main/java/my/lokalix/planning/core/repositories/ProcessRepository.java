@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ProcessRepository extends JpaRepository<ProcessEntity, UUID> {
 
-  List<ProcessEntity> findAllByOrderByOrderIndexAsc();
+  List<ProcessEntity> findAllByOrderByCreationDateAsc();
 }

@@ -25,6 +25,11 @@ public class ProcessLineEntity {
   @Id
   private final UUID processLineId = UUID.randomUUID();
 
+  @Setter(AccessLevel.NONE)
+  @NotNull
+  @Column(nullable = false)
+  private final OffsetDateTime creationDate = TimeUtils.nowOffsetDateTimeUTC();
+
   @NotNull
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "npi_order_id", nullable = false)
@@ -52,10 +57,6 @@ public class ProcessLineEntity {
 
   @NotNull
   @Column(nullable = false)
-  private Integer orderIndex;
-
-  @NotNull
-  @Column(nullable = false)
   @Enumerated(EnumType.STRING)
   private ProcessLineStatus status = ProcessLineStatus.NOT_STARTED;
 
@@ -67,8 +68,6 @@ public class ProcessLineEntity {
 
   private LocalDate materialLatestDeliveryDate;
 
-  @Setter(AccessLevel.NONE)
-  @NotNull
-  @Column(nullable = false)
-  private final OffsetDateTime creationDate = TimeUtils.nowOffsetDateTimeUTC();
+  @Column(nullable = false, name = "index_id")
+  private int indexId;
 }

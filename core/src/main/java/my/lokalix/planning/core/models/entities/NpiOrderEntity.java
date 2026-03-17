@@ -27,6 +27,11 @@ public class NpiOrderEntity {
   @Id
   private final UUID npiOrderId = UUID.randomUUID();
 
+  @Setter(AccessLevel.NONE)
+  @NotNull
+  @Column(nullable = false)
+  private final OffsetDateTime creationDate = TimeUtils.nowOffsetDateTimeUTC();
+
   @NotBlank
   @Column(nullable = false)
   private String purchaseOrderNumber;
@@ -44,11 +49,8 @@ public class NpiOrderEntity {
   private Integer quantity;
 
   private LocalDate orderDate;
-
   private LocalDate targetDeliveryDate;
-
   private String customerName;
-
   private String productName;
 
   @NotNull
@@ -62,11 +64,8 @@ public class NpiOrderEntity {
   private OffsetDateTime updatedAt = TimeUtils.nowOffsetDateTimeUTC();
 
   private LocalDate plannedDeliveryDate;
-
   private LocalDate forecastDeliveryDate;
-
   private LocalDate shippingDate;
-
   private LocalDate customerApprovalDate;
 
   @Column(columnDefinition = "TEXT")
@@ -79,17 +78,31 @@ public class NpiOrderEntity {
 
   private OffsetDateTime archivedAt;
 
-  @Setter(AccessLevel.NONE)
-  @NotNull
-  @Column(nullable = false)
-  private final OffsetDateTime creationDate = TimeUtils.nowOffsetDateTimeUTC();
-
   @NotBlank
   @Column(columnDefinition = "TEXT", nullable = false)
   private String searchableConcatenatedFields;
 
-  @OneToMany(mappedBy = "npiOrder", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "npiOrder", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OrderBy("indexId ASC")
   private List<ProcessLineEntity> processLines = new ArrayList<>();
+
+  public void addProcessLine(@NotNull ProcessLineEntity line) {
+    line.setIndexId(processLines.size());
+    line.setNpiOrder(this);
+    processLines.add(line);
+  }
+
+  public void removeProcessLine(@NotNull ProcessLineEntity line) {
+    processLines.remove(line);
+    line.setNpiOrder(null);
+    reindexLines();
+  }
+
+  private void reindexLines() {
+    for (int i = 0; i < processLines.size(); i++) {
+      processLines.get(i).setIndexId(i);
+    }
+  }
 
   @PrePersist
   @PreUpdate
