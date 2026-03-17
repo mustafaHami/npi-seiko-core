@@ -85,19 +85,4 @@ public class NpiOrderController {
     return new ResponseEntity<>(result, HttpStatus.OK);
   }
 
-  @GetMapping("/{uid}/process")
-  public ResponseEntity<SWProcess> retrieveNpiOrderProcess(@PathVariable final UUID uid) {
-    SWProcess result = npiOrderService.retrieveNpiOrderProcess(uid);
-    return new ResponseEntity<>(result, HttpStatus.OK);
-  }
-
-  @PostMapping("/{uid}/process/lines/{lineUid}/status")
-  public ResponseEntity<SWOutputProcessLineUpdate> updateNpiOrderProcessLineStatus(
-      @PathVariable final UUID uid,
-      @PathVariable final UUID lineUid,
-      @Valid @RequestBody SWProcessLineStatusUpdateBody body) {
-    SWOutputProcessLineUpdate result =
-        npiOrderService.updateNpiOrderProcessLineStatus(uid, lineUid, body);
-    return new ResponseEntity<>(result, HttpStatus.OK);
-  }
 }

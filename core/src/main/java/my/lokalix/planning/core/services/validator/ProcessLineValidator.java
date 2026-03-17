@@ -12,26 +12,22 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ProcessLineValidator {
 
-  public void validateStatusUpdate(
-      ProcessLineEntity line, SWProcessLineStatusUpdateBody body) {
+  public void validateStatusUpdate(ProcessLineEntity line, SWProcessLineStatusUpdateBody body) {
 
     ProcessLineStatus newStatus = ProcessLineStatus.fromValue(body.getStatus().getValue());
 
-    if (newStatus == ProcessLineStatus.IN_PROGRESS) {
+    if (newStatus == ProcessLineStatus.IN_PROGRESS || newStatus == ProcessLineStatus.COMPLETED) {
       if (line.getIsMaterialPurchase() && body.getMaterialLatestDeliveryDate() == null) {
         throw new GenericWithMessageException(
-            "Latest delivery date is required to start this step",
-            SWCustomErrorCode.GENERIC_ERROR);
+            "Latest delivery date is required to start this step", SWCustomErrorCode.GENERIC_ERROR);
       }
       if (line.getIsProduction() && body.getRemainingTime() == null) {
         throw new GenericWithMessageException(
-            "Remaining time is required to start Production",
-            SWCustomErrorCode.GENERIC_ERROR);
+            "Remaining time is required to start Production", SWCustomErrorCode.GENERIC_ERROR);
       }
       if (line.getIsTesting() && body.getRemainingTime() == null) {
         throw new GenericWithMessageException(
-            "Remaining time is required to start Testing",
-            SWCustomErrorCode.GENERIC_ERROR);
+            "Remaining time is required to start Testing", SWCustomErrorCode.GENERIC_ERROR);
       }
     }
   }

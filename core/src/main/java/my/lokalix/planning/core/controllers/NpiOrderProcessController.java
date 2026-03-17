@@ -1,0 +1,45 @@
+package my.lokalix.planning.core.controllers;
+
+import jakarta.validation.Valid;
+import java.util.List;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import my.lokalix.planning.core.services.NpiOrderService;
+import my.zkonsulting.planning.generated.model.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+@RequiredArgsConstructor
+@Validated
+@RestController
+@RequestMapping("npi-orders/{uid}/process")
+public class NpiOrderProcessController {
+
+  private final NpiOrderService npiOrderService;
+
+  @GetMapping
+  public ResponseEntity<SWProcess> retrieveNpiOrderProcess(@PathVariable final UUID uid) {
+    SWProcess result = npiOrderService.retrieveNpiOrderProcess(uid);
+    return new ResponseEntity<>(result, HttpStatus.OK);
+  }
+
+  @PostMapping("/lines/{lineUid}/status")
+  public ResponseEntity<SWOutputProcessLineUpdate> updateNpiOrderProcessLineStatus(
+      @PathVariable final UUID uid,
+      @PathVariable final UUID lineUid,
+      @Valid @RequestBody SWProcessLineStatusUpdateBody body) {
+    SWOutputProcessLineUpdate result =
+        npiOrderService.updateNpiOrderProcessLineStatus(uid, lineUid, body);
+    return new ResponseEntity<>(result, HttpStatus.OK);
+  }
+
+  @GetMapping("/lines/{lineUid}/statuses")
+  public ResponseEntity<List<SWProcessLineStatusHistory>> retrieveNpiOrderProcessLineStatusesHistory(
+      @PathVariable final UUID uid, @PathVariable final UUID lineUid) {
+    List<SWProcessLineStatusHistory> result =
+        npiOrderService.retrieveNpiOrderProcessLineStatusesHistory(uid, lineUid);
+    return new ResponseEntity<>(result, HttpStatus.OK);
+  }
+}

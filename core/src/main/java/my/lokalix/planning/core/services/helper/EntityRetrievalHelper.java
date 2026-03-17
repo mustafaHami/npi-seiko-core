@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import my.lokalix.planning.core.models.entities.*;
 import my.lokalix.planning.core.repositories.*;
 import my.lokalix.planning.core.repositories.ProcessLineRepository;
+import my.lokalix.planning.core.repositories.ProcessLineStatusHistoryRepository;
 import my.lokalix.planning.core.repositories.ProcessRepository;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,7 @@ public class EntityRetrievalHelper {
   private final NpiOrderRepository npiOrderRepository;
   private final ProcessRepository processRepository;
   private final ProcessLineRepository processLineRepository;
+  private final ProcessLineStatusHistoryRepository processLineStatusHistoryRepository;
 
 
   public FileInfoEntity getMustExistFileEntity(UUID uuid) {
@@ -42,5 +44,11 @@ public class EntityRetrievalHelper {
     return processLineRepository
         .findById(uuid)
         .orElseThrow(() -> new EntityNotFoundException("Process line not found"));
+  }
+
+  public ProcessLineStatusHistoryEntity getMustExistProcessLineStatusHistoryById(UUID uuid) {
+    return processLineStatusHistoryRepository
+        .findById(uuid)
+        .orElseThrow(() -> new EntityNotFoundException("Process line status history not found"));
   }
 }

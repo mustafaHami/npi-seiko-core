@@ -10,14 +10,18 @@ import my.lokalix.planning.core.configurations.AppConfigurationProperties;
 import my.lokalix.planning.core.exceptions.GenericWithMessageException;
 import my.lokalix.planning.core.mappers.NpiOrderMapper;
 import my.lokalix.planning.core.mappers.ProcessLineMapper;
+import my.lokalix.planning.core.mappers.ProcessLineStatusHistoryMapper;
 import my.lokalix.planning.core.models.entities.NpiOrderEntity;
 import my.lokalix.planning.core.models.entities.ProcessEntity;
 import my.lokalix.planning.core.models.entities.ProcessLineEntity;
+import my.lokalix.planning.core.models.entities.ProcessLineStatusHistoryEntity;
 import my.lokalix.planning.core.models.enums.NpiOrderStatus;
 import my.lokalix.planning.core.models.enums.ProcessLineStatus;
 import my.lokalix.planning.core.repositories.NpiOrderRepository;
 import my.lokalix.planning.core.repositories.ProcessLineRepository;
+import my.lokalix.planning.core.repositories.ProcessLineStatusHistoryRepository;
 import my.lokalix.planning.core.repositories.ProcessRepository;
+import my.lokalix.planning.core.security.LoggedUserDetailsService;
 import my.lokalix.planning.core.services.helper.EntityRetrievalHelper;
 import my.lokalix.planning.core.services.validator.NpiValidator;
 import my.lokalix.planning.core.services.validator.ProcessLineValidator;
@@ -37,13 +41,16 @@ public class NpiOrderService {
 
   private final NpiOrderMapper npiOrderMapper;
   private final ProcessLineMapper processLineMapper;
+  private final ProcessLineStatusHistoryMapper processLineStatusHistoryMapper;
   private final NpiOrderRepository npiOrderRepository;
   private final ProcessRepository processRepository;
   private final ProcessLineRepository processLineRepository;
+  private final ProcessLineStatusHistoryRepository processLineStatusHistoryRepository;
   private final EntityRetrievalHelper entityRetrievalHelper;
   private final ProcessLineValidator processLineValidator;
   private final AppConfigurationProperties appConfigurationProperties;
   private final NpiValidator npiValidator;
+  private final LoggedUserDetailsService loggedUserDetailsService;
 
   @Transactional
   public SWNpiOrder createNpiOrder(SWNpiOrderCreate body) {
@@ -136,7 +143,6 @@ public class NpiOrderService {
     processLineValidator.validateStatusUpdate(line, body);
 
     ProcessLineStatus newStatus = ProcessLineStatus.fromValue(body.getStatus().getValue());
-    line.setStatus(newStatus);
 
     if (newStatus == ProcessLineStatus.IN_PROGRESS) {
       if (line.getIsMaterialPurchase()) {
@@ -153,6 +159,11 @@ public class NpiOrderService {
       npiOrderRepository.save(npiOrder);
     }
 
+    line.addStatus(
+        TimeUtils.nowOffsetDateTimeUTC(),
+        null,
+        newStatus,
+        loggedUserDetailsService.getLoggedUserReference());
     ProcessLineEntity savedLine = processLineRepository.save(line);
 
     List<ProcessLineEntity> allLines =
@@ -264,6 +275,16 @@ public class NpiOrderService {
     entity.setForecastDeliveryDate(plannedDate);
   }
 
+  @Transactional
+  public List<SWProcessLineStatusHistory> retrieveNpiOrderProcessLineStatusesHistory(
+      UUID npiOrderUid, UUID lineUid) {
+    entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
+    ProcessLineEntity line = entityRetrievalHelper.getMustExistProcessLineById(lineUid);
+    List<ProcessLineStatusHistoryEntity> history =
+        processLineStatusHistoryRepository.findAllByProcessLineOrderByStartDateAsc(line);
+    return processLineStatusHistoryMapper.toListSWProcessLineStatusHistory(history);
+  }
+
   private SWNpiOrdersPaginated populateNpiOrdersPaginatedResults(
       Page<NpiOrderEntity> paginatedResults) {
     SWNpiOrdersPaginated result = new SWNpiOrdersPaginated();
@@ -275,4 +296,5 @@ public class NpiOrderService {
     result.setHasNext(paginatedResults.hasNext());
     return result;
   }
+
 }
