@@ -20,6 +20,7 @@ import my.lokalix.planning.core.repositories.NpiOrderRepository;
 import my.lokalix.planning.core.repositories.ProcessLineRepository;
 import my.lokalix.planning.core.utils.ExcelUtils;
 import my.lokalix.planning.core.utils.TimeUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -52,6 +53,7 @@ public class NpiOrderHelper {
       "Target Delivery Date",
       "Planned Delivery Date",
       "Forecast Delivery Date",
+      "Material latest delivery Date",
       "Creation Date",
     };
     return buildNpiOrdersWorkbook(headers, entities, false);
@@ -70,6 +72,7 @@ public class NpiOrderHelper {
       "Target Delivery Date",
       "Planned Delivery Date",
       "Forecast Delivery Date",
+      "Material latest delivery Date",
       "Creation Date",
       "Finalization Date",
     };
@@ -91,9 +94,9 @@ public class NpiOrderHelper {
       writeHeaderRow(sheet, headers, styles);
       int rowIndex = 1;
       int col = 1;
-      for (NpiOrderEntity cr : entities) {
+      for (NpiOrderEntity npi : entities) {
         col =
-            writeNpiOrderDataRow(sheet.createRow(rowIndex++), cr, styles, includeFinalizationDate);
+            writeNpiOrderDataRow(sheet.createRow(rowIndex++), npi, styles, includeFinalizationDate);
       }
       for (int i = 0; i < col; i++) {
         sheet.autoSizeColumn(i);
@@ -104,32 +107,32 @@ public class NpiOrderHelper {
   }
 
   private int writeNpiOrderDataRow(
-      Row row, NpiOrderEntity cr, ExcelCellStyles styles, boolean isArchived) {
+      Row row, NpiOrderEntity npi, ExcelCellStyles styles, boolean isArchived) {
     int col = 0;
     ExcelUtils.createAndStyleCellLeftAlignment(
         row,
         col++,
-        cr.getPurchaseOrderNumber(),
+        npi.getPurchaseOrderNumber(),
         CellStyleFormatEnum.STRING,
         CellColorEnum.WHITE,
         styles);
     ExcelUtils.createAndStyleCellLeftAlignment(
-        row, col++, cr.getWorkOrderId(), CellStyleFormatEnum.INTEGER, CellColorEnum.WHITE, styles);
+        row, col++, npi.getWorkOrderId(), CellStyleFormatEnum.STRING, CellColorEnum.WHITE, styles);
     ExcelUtils.createAndStyleCellLeftAlignment(
-        row, col++, cr.getPartNumber(), CellStyleFormatEnum.STRING, CellColorEnum.WHITE, styles);
+        row, col++, npi.getPartNumber(), CellStyleFormatEnum.STRING, CellColorEnum.WHITE, styles);
     ExcelUtils.createAndStyleCellLeftAlignment(
-        row, col++, cr.getQuantity(), CellStyleFormatEnum.INTEGER, CellColorEnum.WHITE, styles);
+        row, col++, npi.getQuantity(), CellStyleFormatEnum.INTEGER, CellColorEnum.WHITE, styles);
     ExcelUtils.createAndStyleCellLeftAlignment(
         row,
         col++,
-        cr.getStatus() != null ? cr.getStatus().getHumanReadableValue() : null,
+        npi.getStatus() != null ? npi.getStatus().getHumanReadableValue() : null,
         CellStyleFormatEnum.STRING,
         CellColorEnum.WHITE,
         styles);
     ExcelUtils.createAndStyleCellLeftAlignment(
         row,
         col++,
-        StringUtils.isNotBlank(cr.getCustomerName()) ? cr.getCustomerName() : null,
+        StringUtils.isNotBlank(npi.getCustomerName()) ? npi.getCustomerName() : null,
         CellStyleFormatEnum.STRING,
         CellColorEnum.WHITE,
         styles);
@@ -137,7 +140,7 @@ public class NpiOrderHelper {
       ExcelUtils.createAndStyleCellLeftAlignment(
           row,
           col++,
-          cr.getCurrentProcessName(),
+          npi.getCurrentProcessName(),
           CellStyleFormatEnum.STRING,
           CellColorEnum.WHITE,
           styles);
@@ -146,28 +149,35 @@ public class NpiOrderHelper {
     ExcelUtils.createAndStyleCellLeftAlignment(
         row,
         col++,
-        cr.getTargetDeliveryDate() != null ? cr.getTargetDeliveryDate() : null,
+        npi.getTargetDeliveryDate() != null ? npi.getTargetDeliveryDate() : null,
         CellStyleFormatEnum.DATE,
         CellColorEnum.WHITE,
         styles);
     ExcelUtils.createAndStyleCellLeftAlignment(
         row,
         col++,
-        cr.getPlannedDeliveryDate() != null ? cr.getPlannedDeliveryDate() : null,
+        npi.getPlannedDeliveryDate() != null ? npi.getPlannedDeliveryDate() : null,
         CellStyleFormatEnum.DATE,
         CellColorEnum.WHITE,
         styles);
     ExcelUtils.createAndStyleCellLeftAlignment(
         row,
         col++,
-        cr.getForecastDeliveryDate() != null ? cr.getForecastDeliveryDate() : null,
+        npi.getForecastDeliveryDate() != null ? npi.getForecastDeliveryDate() : null,
         CellStyleFormatEnum.DATE,
         CellColorEnum.WHITE,
         styles);
     ExcelUtils.createAndStyleCellLeftAlignment(
         row,
         col++,
-        cr.getCreationDate().toLocalDate(),
+        getMaterialDeliveryDate(npi.getProcessLines()),
+        CellStyleFormatEnum.DATE,
+        CellColorEnum.WHITE,
+        styles);
+    ExcelUtils.createAndStyleCellLeftAlignment(
+        row,
+        col++,
+        npi.getCreationDate().toLocalDate(),
         CellStyleFormatEnum.DATE,
         CellColorEnum.WHITE,
         styles);
@@ -175,12 +185,21 @@ public class NpiOrderHelper {
       ExcelUtils.createAndStyleCellLeftAlignment(
           row,
           col++,
-          cr.getFinalizationDate() != null ? cr.getFinalizationDate().toLocalDate() : null,
+          npi.getFinalizationDate() != null ? npi.getFinalizationDate().toLocalDate() : null,
           CellStyleFormatEnum.DATE,
           CellColorEnum.WHITE,
           styles);
     }
     return col;
+  }
+
+  private LocalDate getMaterialDeliveryDate(List<ProcessLineEntity> processLines) {
+    if (CollectionUtils.isEmpty(processLines)) return null;
+    ProcessLineEntity processLine = processLines.getFirst();
+    if (processLine == null) return null;
+    return processLine.getMaterialLatestDeliveryDate() != null
+        ? processLine.getMaterialLatestDeliveryDate()
+        : null;
   }
 
   private void writeHeaderRow(Sheet sheet, String[] headers, ExcelCellStyles styles) {

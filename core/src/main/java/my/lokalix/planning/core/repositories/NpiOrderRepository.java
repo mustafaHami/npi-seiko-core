@@ -15,6 +15,72 @@ public interface NpiOrderRepository extends JpaRepository<NpiOrderEntity, UUID> 
 
   List<NpiOrderEntity> findAllByArchivedFalse();
 
+  @Query(
+      """
+          SELECT COUNT(n) FROM NpiOrderEntity n
+          WHERE n.status NOT IN :finalStatuses
+          AND n.archived = false
+          """)
+  long countOpenNpiOrders(@Param("finalStatuses") List<NpiOrderStatus> finalStatuses);
+
+  @Query(
+      """
+          SELECT COALESCE(SUM(n.quantity), 0) FROM NpiOrderEntity n
+          WHERE n.status NOT IN :finalStatuses
+          AND n.archived = false
+          """)
+  long sumOpenNpiOrdersQuantity(@Param("finalStatuses") List<NpiOrderStatus> finalStatuses);
+
+  @Query(
+      """
+          SELECT n FROM NpiOrderEntity n
+          WHERE n.status NOT IN :finalStatuses
+          AND n.archived = false
+          """)
+  List<NpiOrderEntity> findOpenNpiOrders(
+      @Param("finalStatuses") List<NpiOrderStatus> finalStatuses);
+
+  @Query(
+      """
+          SELECT n.status, COUNT(n) FROM NpiOrderEntity n
+          WHERE n.archived = false
+          AND n.status NOT IN :finalStatuses
+          GROUP BY n.status
+          """)
+  List<Object[]> dashboardCountOpenNpiOrdersGroupByStatus(
+      @Param("finalStatuses") List<NpiOrderStatus> finalStatuses);
+
+  @Query(
+      value =
+          """
+              SELECT AVG(EXTRACT(EPOCH FROM (finalization_date - creation_date)) / 86400)
+              FROM npi_order
+              WHERE status = 'COMPLETED'
+              AND finalization_date IS NOT NULL
+              """,
+      nativeQuery = true)
+  Double dashboardAvgLeadTimeDaysCompletedNpiOrders();
+
+  @Query(
+      value =
+          """
+              SELECT AVG(EXTRACT(EPOCH FROM (NOW() - creation_date)) / 86400)
+              FROM npi_order
+              WHERE archived = false
+              AND status NOT IN ('COMPLETED', 'ABORTED')
+              """,
+      nativeQuery = true)
+  Double dashboardAvgLeadTimeDaysOpenNpiOrders();
+
+  @Query(
+      value =
+          """
+              SELECT COUNT(*) FROM npi_order
+              WHERE status = 'COMPLETED'
+              """,
+      nativeQuery = true)
+  long countCompletedNpiOrders();
+
   List<NpiOrderEntity> findByArchivedTrue(Sort sort);
 
   List<NpiOrderEntity> findByArchivedFalseAndStatusNotIn(List<NpiOrderStatus> statuses, Sort sort);

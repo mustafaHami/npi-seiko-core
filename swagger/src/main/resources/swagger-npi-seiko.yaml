@@ -994,28 +994,78 @@ components:
       properties:
         globalKpis:
           $ref: '#/components/schemas/DashboardGlobalKpis'
-        npiOrderCountByStageStatus:
+        worstNpiOrders:
           type: array
           items:
-            $ref: '#/components/schemas/DashboardNpiOrderCountByStageStatus'
+            $ref: '#/components/schemas/DashboardWorstNpiOrder'
+        npiCountByStatus:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardNpiCountByStatus'
+        processStageKpis:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardProcessStageKpi'
 
     DashboardGlobalKpis:
       type: object
       properties:
-        totalOpenNpiOrders:
-          description: Number of non-finalized npi order (exclude final status)
+        openNpiCount:
+          description: Number of non-finalized NPI orders
+          type: integer
+        completedNpiCount:
+          description: Number of completed NPI orders
           type: integer
         averageLeadTimeDaysOpenNpiOrders:
-          description: Average number of days since creation for open npi requests
+          description: Average number of days between creationDate and now for open NPI orders
           type: number
           format: double
+        averageLeadTimeDaysCompletedNpiOrders:
+          description: Average number of days between creationDate and finalizationDate for completed NPI orders
+          type: number
+          format: double
+        totalOpenQuantity:
+          description: Total quantity of all open NPI orders
+          type: integer
+        customerApprovalPendingCount:
+          description: Number of NPI orders currently waiting for customer approval (Customer Approval step IN_PROGRESS)
+          type: integer
 
-    DashboardNpiOrderCountByStageStatus:
+    DashboardWorstNpiOrder:
+      type: object
+      properties:
+        uid:
+          $ref: '#/components/schemas/Uid'
+        purchaseOrderNumber:
+          type: string
+        partNumber:
+          type: string
+        targetDeliveryDate:
+          type: string
+          format: date
+        plannedDeliveryDate:
+          type: string
+          format: date
+        delayInDays:
+          description: Difference in days between plannedDeliveryDate and targetDeliveryDate (positive = late)
+          type: integer
+
+    DashboardNpiCountByStatus:
       type: object
       properties:
         status:
-          $ref: '#/components/schemas/ProcessLineStatus'
+          $ref: '#/components/schemas/NpiOrderStatus'
         count:
+          type: integer
+
+    DashboardProcessStageKpi:
+      type: object
+      properties:
+        processName:
+          type: string
+        notStartedCount:
+          type: integer
+        inProgressCount:
           type: integer
 
     NpiOrderSearch:
