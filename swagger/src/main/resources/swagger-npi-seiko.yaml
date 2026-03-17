@@ -1507,6 +1507,8 @@ components:
         statusDate:
           type: string
           format: date-time
+        archived:
+          type: boolean
     NpiOrderStatus:
       type: string
       enum:
