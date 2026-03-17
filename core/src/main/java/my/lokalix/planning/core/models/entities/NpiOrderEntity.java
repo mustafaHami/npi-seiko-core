@@ -61,6 +61,8 @@ public class NpiOrderEntity {
   @Column(nullable = false)
   private OffsetDateTime updatedAt = TimeUtils.nowOffsetDateTimeUTC();
 
+  private OffsetDateTime finalizationDate;
+
   private LocalDate plannedDeliveryDate;
   private LocalDate forecastDeliveryDate;
 
@@ -93,6 +95,9 @@ public class NpiOrderEntity {
   public void setStatus(NpiOrderStatus status) {
     this.statusDate = TimeUtils.nowOffsetDateTimeUTC();
     this.status = status;
+    if (status.isFinalStatus()) {
+      setFinalizationDate(TimeUtils.nowOffsetDateTimeUTC());
+    }
   }
 
   public void addProcessLine(@NotNull ProcessLineEntity line) {

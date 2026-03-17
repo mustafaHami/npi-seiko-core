@@ -149,7 +149,6 @@ public class NpiOrderService {
     npiValidator.validateNpiUpdatable(npiOrder);
     processLineValidator.validateStatusUpdate(line, body);
 
-    ProcessLineStatus previousStatus = line.getStatus();
     ProcessLineStatus newStatus = ProcessLineStatus.fromValue(body.getStatus().getValue());
 
     if (newStatus == ProcessLineStatus.IN_PROGRESS) {
