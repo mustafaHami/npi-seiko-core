@@ -1478,6 +1478,24 @@ components:
           type: string
         productName:
           type: string
+        materialPurchasePlanTimeInHours:
+          type: number
+          format: double
+        materialReceivingPlanTimeInHours:
+          type: number
+          format: double
+        productionPlanTimeInHours:
+          type: number
+          format: double
+        testingPlanTimeInHours:
+          type: number
+          format: double
+        shippingPlanTimeInHours:
+          type: number
+          format: double
+        customerApprovalPlanTimeInHours:
+          type: number
+          format: double
         status:
           $ref: '#/components/schemas/NpiOrderStatus'
         currentProcessName:

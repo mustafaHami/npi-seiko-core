@@ -105,7 +105,7 @@ public class NpiOrderService {
               }
             });
     calculateAndSetDeliveryDates(entity);
-
+    npiForecastHelper.recalculateForecastDeliveryDate(entity);
     return npiOrderMapper.toSWNpiOrder(npiOrderRepository.save(entity));
   }
 
@@ -158,7 +158,9 @@ public class NpiOrderService {
     processLineValidator.validateStatusUpdate(line, body);
 
     ProcessLineStatus newStatus = ProcessLineStatus.fromValue(body.getStatus().getValue());
-
+    if (newStatus == ProcessLineStatus.NOT_STARTED) {
+      line.setRemainingTimeInHours(null);
+    }
     if (newStatus == ProcessLineStatus.IN_PROGRESS) {
       if (line.getIsMaterialPurchase()) {
         line.setMaterialLatestDeliveryDate(body.getMaterialLatestDeliveryDate());
