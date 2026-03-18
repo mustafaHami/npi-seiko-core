@@ -224,11 +224,10 @@ public class NpiOrderHelper {
       BigDecimal planTimeInHours = line.getPlanTimeInHours();
 
       if (status == ProcessLineStatus.IN_PROGRESS) {
-        if (planTimeInHours != null) {
-          totalForecastHours = totalForecastHours.add(planTimeInHours);
-        }
-        if (remainingTimeInHours != null) {
-          totalForecastHours = totalForecastHours.add(remainingTimeInHours);
+        BigDecimal timeToAdd =
+            remainingTimeInHours != null ? remainingTimeInHours : planTimeInHours;
+        if (timeToAdd != null) {
+          totalForecastHours = totalForecastHours.add(timeToAdd);
         }
       } else if (status == ProcessLineStatus.NOT_STARTED && planTimeInHours != null) {
         totalForecastHours = totalForecastHours.add(planTimeInHours);

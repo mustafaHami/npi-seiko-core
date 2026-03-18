@@ -1,11 +1,16 @@
 package my.lokalix.planning.core.services.validator;
 
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import my.lokalix.planning.core.exceptions.GenericWithMessageException;
+import my.lokalix.planning.core.models.entities.NpiOrderEntity;
 import my.lokalix.planning.core.models.entities.ProcessLineEntity;
 import my.lokalix.planning.core.models.enums.ProcessLineStatus;
 import my.zkonsulting.planning.generated.model.SWCustomErrorCode;
 import my.zkonsulting.planning.generated.model.SWProcessLineStatusUpdateBody;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -20,7 +25,8 @@ public class ProcessLineValidator {
     }
   }
 
-  public void validateStatusUpdate(ProcessLineEntity line, SWProcessLineStatusUpdateBody body) {
+  public void validateStatusUpdate(
+      ProcessLineEntity line, SWProcessLineStatusUpdateBody body, NpiOrderEntity npiOrder) {
 
     ProcessLineStatus newStatus = ProcessLineStatus.fromValue(body.getStatus().getValue());
 
@@ -55,5 +61,49 @@ public class ProcessLineValidator {
       throw new GenericWithMessageException(
           "Cannot complete a step that is not in progress", SWCustomErrorCode.GENERIC_ERROR);
     }
+
+    if (newStatus == ProcessLineStatus.COMPLETED && line.getIsShipment()) {
+      LocalDate materialLatestDeliveryDate = findMaterialLatestDeliveryDate(npiOrder);
+      if (materialLatestDeliveryDate != null
+          && body.getShippingDate() != null
+          && body.getShippingDate().isBefore(materialLatestDeliveryDate)) {
+        throw new GenericWithMessageException(
+            "Shipping date cannot be before the latest material delivery date",
+            SWCustomErrorCode.GENERIC_ERROR);
+      }
+    }
+
+    if (newStatus == ProcessLineStatus.IN_PROGRESS && line.getIsCustomerApproval()) {
+      LocalDate shippingDate = findShippingDate(npiOrder);
+      if (shippingDate != null
+          && body.getStartingCustomerApprovalDate() != null
+          && body.getStartingCustomerApprovalDate().isBefore(shippingDate)) {
+        throw new GenericWithMessageException(
+            "Customer approval date cannot be before the shipping date",
+            SWCustomErrorCode.GENERIC_ERROR);
+      }
+    }
+  }
+
+  private LocalDate findMaterialLatestDeliveryDate(NpiOrderEntity npiOrder) {
+    List<ProcessLineEntity> lines = npiOrder.getProcessLines();
+    if (CollectionUtils.isEmpty(lines)) return null;
+    return lines.stream()
+        .filter(ProcessLineEntity::getIsMaterialPurchase)
+        .map(ProcessLineEntity::getMaterialLatestDeliveryDate)
+        .filter(Objects::nonNull)
+        .findFirst()
+        .orElse(null);
+  }
+
+  private LocalDate findShippingDate(NpiOrderEntity npiOrder) {
+    List<ProcessLineEntity> lines = npiOrder.getProcessLines();
+    if (CollectionUtils.isEmpty(lines)) return null;
+    return lines.stream()
+        .filter(ProcessLineEntity::getIsShipment)
+        .map(ProcessLineEntity::getShippingDate)
+        .filter(d -> d != null)
+        .findFirst()
+        .orElse(null);
   }
 }

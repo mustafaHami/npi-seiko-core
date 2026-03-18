@@ -156,7 +156,7 @@ public class NpiOrderService {
     NpiOrderEntity npiOrder = entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
     ProcessLineEntity line = entityRetrievalHelper.getMustExistProcessLineById(lineUid);
     npiValidator.validateNpiUpdatable(npiOrder);
-    processLineValidator.validateStatusUpdate(line, body);
+    processLineValidator.validateStatusUpdate(line, body, npiOrder);
 
     ProcessLineStatus newStatus = ProcessLineStatus.fromValue(body.getStatus().getValue());
     if (newStatus == ProcessLineStatus.NOT_STARTED) {
@@ -335,7 +335,14 @@ public class NpiOrderService {
             .filter(l -> l.getPlanTimeInHours() != null)
             .mapToDouble(l -> l.getPlanTimeInHours().doubleValue())
             .sum();
-    LocalDate plannedDate = entity.getOrderDate().plusDays(Math.round(totalHours));
+    long totalDays = (long) Math.ceil(totalHours / 24.0);
+    LocalDate baseDate =
+        entity
+            .getOrderDate()
+            .isBefore(TimeUtils.nowLocalDate(appConfigurationProperties.getAppTimezone()))
+            ? TimeUtils.nowLocalDate(appConfigurationProperties.getAppTimezone())
+            : entity.getOrderDate();
+    LocalDate plannedDate = baseDate.plusDays(totalDays);
     entity.setPlannedDeliveryDate(plannedDate);
     entity.setForecastDeliveryDate(plannedDate);
   }

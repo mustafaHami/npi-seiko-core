@@ -4,7 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum NpiOrderStatus {
-  READY_TO_PRODUCTION("READY_TO_PRODUCTION", "Ready to production"),
+  READY_TO_START("READY_TO_START", "Ready to start"),
 
   STARTED("STARTED", "Started"),
 
@@ -43,6 +43,6 @@ public enum NpiOrderStatus {
   }
 
   public boolean isAbortable() {
-    return this.equals(READY_TO_PRODUCTION) || this.equals(STARTED);
+    return this.equals(READY_TO_START) || this.equals(STARTED);
   }
 }

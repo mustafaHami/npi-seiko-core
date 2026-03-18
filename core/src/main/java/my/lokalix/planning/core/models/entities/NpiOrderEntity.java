@@ -56,7 +56,7 @@ public class NpiOrderEntity {
   @NotNull
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  private NpiOrderStatus status = NpiOrderStatus.READY_TO_PRODUCTION;
+  private NpiOrderStatus status = NpiOrderStatus.READY_TO_START;
 
   @Column(nullable = false)
   private OffsetDateTime updatedAt = TimeUtils.nowOffsetDateTimeUTC();
@@ -90,7 +90,7 @@ public class NpiOrderEntity {
         .allMatch((pl) -> pl.getStatus().equals(ProcessLineStatus.COMPLETED))) {
       setStatus(NpiOrderStatus.COMPLETED);
     }
-    if (status == NpiOrderStatus.READY_TO_PRODUCTION
+    if (status == NpiOrderStatus.READY_TO_START
         && processLines.stream()
             .anyMatch((pl) -> pl.getStatus().equals(ProcessLineStatus.NOT_STARTED))) {
       setStatus(NpiOrderStatus.STARTED);

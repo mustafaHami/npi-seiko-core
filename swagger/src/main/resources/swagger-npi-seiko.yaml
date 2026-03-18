@@ -1612,7 +1612,7 @@ components:
     NpiOrderStatus:
       type: string
       enum:
-        - READY_TO_PRODUCTION
+        - READY_TO_START
         - STARTED
         - COMPLETED
         - ABORTED
