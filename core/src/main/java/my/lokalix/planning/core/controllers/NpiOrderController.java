@@ -94,21 +94,20 @@ public class NpiOrderController {
     return new ResponseEntity<>(result, HttpStatus.OK);
   }
 
-
   @Secured({
     UserRole.SecurityConstants.ADMINISTRATOR,
     UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
   })
-  @PostMapping("/in-progress/export")
-  public ResponseEntity<byte[]> exportInProgressNPIOrder() throws IOException {
-    byte[] fileBytes = npiOrderService.exportInProgressNpiOrder();
+  @PostMapping("/open/export")
+  public ResponseEntity<byte[]> exportOpenNpiOrder() throws IOException {
+    byte[] fileBytes = npiOrderService.exportOpenNpiOrder();
 
     LocalDateTime datetime =
         TimeUtils.nowLocalDateTime(appConfigurationProperties.getAppTimezone());
 
     // Set up the headers
     String filename =
-        "in-progress-npi-orders-"
+        "open-npi-orders-"
             + datetime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
             + ".xlsx";
     HttpHeaders headers = new HttpHeaders();

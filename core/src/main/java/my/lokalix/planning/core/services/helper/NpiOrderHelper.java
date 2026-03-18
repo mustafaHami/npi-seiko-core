@@ -7,6 +7,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 import lombok.RequiredArgsConstructor;
 import my.lokalix.planning.core.configurations.AppConfigurationProperties;
 import my.lokalix.planning.core.models.entities.NpiOrderEntity;
@@ -38,7 +40,7 @@ public class NpiOrderHelper {
   private final ProcessLineRepository processLineRepository;
   private final AppConfigurationProperties appConfigurationProperties;
 
-  public byte[] buildInProgressNpiOrder() throws IOException {
+  public byte[] buildOpenNpiOrder() throws IOException {
     Sort sort = Sort.by(Sort.Order.asc("purchaseOrderNumber"), Sort.Order.asc("workOrderId"));
     List<NpiOrderEntity> entities =
         npiOrderRepository.findByArchivedFalseAndStatusNotIn(FINALIZED_STATUSES, sort);
@@ -55,6 +57,12 @@ public class NpiOrderHelper {
       "Forecast Delivery Date",
       "Material latest delivery Date",
       "Creation Date",
+      "Material Purchase",
+      "Material Receiving",
+      "Production",
+      "Testing",
+      "Shipping",
+      "Customer Approval",
     };
     return buildNpiOrdersWorkbook(headers, entities, false);
   }
@@ -75,6 +83,12 @@ public class NpiOrderHelper {
       "Material latest delivery Date",
       "Creation Date",
       "Finalization Date",
+      "Material Purchase",
+      "Material Receiving",
+      "Production",
+      "Testing",
+      "Shipping",
+      "Customer Approval",
     };
     return buildNpiOrdersWorkbook(headers, entities, true);
   }
@@ -190,7 +204,75 @@ public class NpiOrderHelper {
           CellColorEnum.WHITE,
           styles);
     }
+    ExcelUtils.createAndStyleCellLeftAlignment(
+        row,
+        col++,
+        buildProcessLineInfo(npi.getProcessLines(), ProcessLineEntity::getIsMaterialPurchase),
+        CellStyleFormatEnum.STRING,
+        CellColorEnum.WHITE,
+        styles);
+    ExcelUtils.createAndStyleCellLeftAlignment(
+        row,
+        col++,
+        buildProcessLineInfo(npi.getProcessLines(), ProcessLineEntity::getIsMaterialReceiving),
+        CellStyleFormatEnum.STRING,
+        CellColorEnum.WHITE,
+        styles);
+    ExcelUtils.createAndStyleCellLeftAlignment(
+        row,
+        col++,
+        buildProcessLineInfo(npi.getProcessLines(), ProcessLineEntity::getIsProduction),
+        CellStyleFormatEnum.STRING,
+        CellColorEnum.WHITE,
+        styles);
+    ExcelUtils.createAndStyleCellLeftAlignment(
+        row,
+        col++,
+        buildProcessLineInfo(npi.getProcessLines(), ProcessLineEntity::getIsTesting),
+        CellStyleFormatEnum.STRING,
+        CellColorEnum.WHITE,
+        styles);
+    ExcelUtils.createAndStyleCellLeftAlignment(
+        row,
+        col++,
+        buildProcessLineInfo(npi.getProcessLines(), ProcessLineEntity::getIsShipment),
+        CellStyleFormatEnum.STRING,
+        CellColorEnum.WHITE,
+        styles);
+    ExcelUtils.createAndStyleCellLeftAlignment(
+        row,
+        col++,
+        buildProcessLineInfo(npi.getProcessLines(), ProcessLineEntity::getIsCustomerApproval),
+        CellStyleFormatEnum.STRING,
+        CellColorEnum.WHITE,
+        styles);
     return col;
+  }
+
+  private String buildProcessLineInfo(
+      List<ProcessLineEntity> processLines, Predicate<ProcessLineEntity> typePredicate) {
+    if (CollectionUtils.isEmpty(processLines)) return null;
+    Optional<ProcessLineEntity> lineOpt = processLines.stream().filter(typePredicate).findFirst();
+    if (lineOpt.isEmpty()) return null;
+    ProcessLineEntity line = lineOpt.get();
+
+    StringBuilder sb = new StringBuilder();
+    sb.append(line.getStatus().getHumanReadableValue());
+    if (line.getPlanTimeInHours() != null) {
+      sb.append("; ")
+          .append(line.getPlanTimeInHours().stripTrailingZeros().toPlainString())
+          .append("h");
+    }
+    if (line.getStatus() == ProcessLineStatus.IN_PROGRESS
+        && line.getRemainingTimeInHours() != null) {
+      sb.append("; ")
+          .append(line.getRemainingTimeInHours().stripTrailingZeros().toPlainString())
+          .append("h remaining");
+    }
+    if (line.getCurrentStatusDate() != null) {
+      sb.append("; ").append(line.getCurrentStatusDate().toLocalDate());
+    }
+    return sb.toString();
   }
 
   private LocalDate getMaterialDeliveryDate(List<ProcessLineEntity> processLines) {

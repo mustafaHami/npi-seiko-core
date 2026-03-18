@@ -246,8 +246,8 @@ public class NpiOrderService {
   }
 
   @Transactional
-  public byte[] exportInProgressNpiOrder() throws IOException {
-    return npiOrderHelper.buildInProgressNpiOrder();
+  public byte[] exportOpenNpiOrder() throws IOException {
+    return npiOrderHelper.buildOpenNpiOrder();
   }
 
   @Transactional
@@ -338,8 +338,8 @@ public class NpiOrderService {
     long totalDays = (long) Math.ceil(totalHours / 24.0);
     LocalDate baseDate =
         entity
-            .getOrderDate()
-            .isBefore(TimeUtils.nowLocalDate(appConfigurationProperties.getAppTimezone()))
+                .getOrderDate()
+                .isBefore(TimeUtils.nowLocalDate(appConfigurationProperties.getAppTimezone()))
             ? TimeUtils.nowLocalDate(appConfigurationProperties.getAppTimezone())
             : entity.getOrderDate();
     LocalDate plannedDate = baseDate.plusDays(totalDays);

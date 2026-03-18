@@ -548,12 +548,12 @@ paths:
                 $ref: '#/components/schemas/NpiOrder'
         '400':
           $ref: '#/components/responses/BadRequest'
-  /npi-orders/in-progress/export:
+  /npi-orders/open/export:
     get:
       tags:
         - npi-order
-      summary: Generate in-progress NPI report
-      operationId: exportInProgressNPIOrder
+      summary: Generate open NPI report
+      operationId: exportOpenNPIOrder
       responses:
         '200':
           description: successful operation

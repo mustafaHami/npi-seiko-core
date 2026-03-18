@@ -79,7 +79,17 @@ public class ProcessLineValidator {
           && body.getStartingCustomerApprovalDate() != null
           && body.getStartingCustomerApprovalDate().isBefore(shippingDate)) {
         throw new GenericWithMessageException(
-            "Customer approval date cannot be before the shipping date",
+            "Starting customer approval date cannot be before the shipping date",
+            SWCustomErrorCode.GENERIC_ERROR);
+      }
+    }
+    if (newStatus == ProcessLineStatus.COMPLETED && line.getIsCustomerApproval()) {
+      LocalDate startingCustomerApproval = findStartingCustomerApproval(npiOrder);
+      if (startingCustomerApproval != null
+          && body.getApprovalCustomerDate() != null
+          && body.getApprovalCustomerDate().isBefore(startingCustomerApproval)) {
+        throw new GenericWithMessageException(
+            "Customer approval date cannot be before the starting approval date",
             SWCustomErrorCode.GENERIC_ERROR);
       }
     }
@@ -102,7 +112,18 @@ public class ProcessLineValidator {
     return lines.stream()
         .filter(ProcessLineEntity::getIsShipment)
         .map(ProcessLineEntity::getShippingDate)
-        .filter(d -> d != null)
+        .filter(Objects::nonNull)
+        .findFirst()
+        .orElse(null);
+  }
+
+  private LocalDate findStartingCustomerApproval(NpiOrderEntity npiOrder) {
+    List<ProcessLineEntity> lines = npiOrder.getProcessLines();
+    if (CollectionUtils.isEmpty(lines)) return null;
+    return lines.stream()
+        .filter(ProcessLineEntity::getIsCustomerApproval)
+        .map(ProcessLineEntity::getStartingCustomerApprovalDate)
+        .filter(Objects::nonNull)
         .findFirst()
         .orElse(null);
   }
