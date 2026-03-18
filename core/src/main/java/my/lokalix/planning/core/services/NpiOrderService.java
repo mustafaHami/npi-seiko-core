@@ -99,7 +99,7 @@ public class NpiOrderService {
   @Transactional
   public SWNpiOrder updateNpiOrder(UUID uid, SWNpiOrderUpdate body) {
     NpiOrderEntity entity = entityRetrievalHelper.getMustExistNpiOrderById(uid);
-    if (entity.getStatus().isFinalStatus()) {
+    if (entity.getStatus().isFinalStatus() || entity.getStatus().equals(NpiOrderStatus.STARTED)) {
       throw new GenericWithMessageException(
           "Cannot update an NPI order with status " + entity.getStatus().getValue(),
           SWCustomErrorCode.GENERIC_ERROR);
@@ -213,9 +213,8 @@ public class NpiOrderService {
     processLineRepository.save(line);
     resetFollowingLinesToDefaultState(npiOrder, line);
     npiOrderHelper.recalculateForecastDeliveryDate(npiOrder);
-
     npiOrderRepository.save(npiOrder);
-    npiOrder.checkIfAllLinesIsCompleted();
+    npiOrder.manageNpiStatusBasedProcessLinesStatus();
 
     return processLineMapper.toListSWProcessLine(npiOrder.getProcessLines());
   }
@@ -444,6 +443,7 @@ public class NpiOrderService {
             && previousRemainingTimeInHours.compareTo(body.getRemainingTimeInHours()) != 0)) {
       processLineRepository.save(line);
       npiOrderHelper.recalculateForecastDeliveryDate(npiOrder);
+      npiOrderRepository.save(npiOrder);
       return processLineMapper.toSWProcessLine(line);
     }
     return processLineMapper.toSWProcessLine(processLineRepository.save(line));

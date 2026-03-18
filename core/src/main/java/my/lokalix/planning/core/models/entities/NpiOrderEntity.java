@@ -84,15 +84,21 @@ public class NpiOrderEntity {
   @OrderBy("indexId ASC")
   private List<ProcessLineEntity> processLines = new ArrayList<>();
 
-  public void checkIfAllLinesIsCompleted() {
+  public void manageNpiStatusBasedProcessLinesStatus() {
     if (CollectionUtils.isEmpty(processLines)) return;
     if (processLines.stream()
         .allMatch((pl) -> pl.getStatus().equals(ProcessLineStatus.COMPLETED))) {
       setStatus(NpiOrderStatus.COMPLETED);
     }
-    if (status == NpiOrderStatus.READY_TO_START
-        && processLines.stream()
-            .anyMatch((pl) -> pl.getStatus().equals(ProcessLineStatus.NOT_STARTED))) {
+    // if all lines are not started or back to the first process to status not started
+    //  set status to ready to start
+    // else if have at least one line not started set status to started
+    if (processLines.stream()
+        .allMatch((pl) -> pl.getStatus().equals(ProcessLineStatus.NOT_STARTED))) {
+      if (status != NpiOrderStatus.READY_TO_START) {
+        setStatus(NpiOrderStatus.READY_TO_START);
+      }
+    } else if (status != NpiOrderStatus.STARTED) {
       setStatus(NpiOrderStatus.STARTED);
     }
   }
