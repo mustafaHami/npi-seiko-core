@@ -214,7 +214,9 @@ public class NpiOrderService {
     resetFollowingLinesToDefaultState(npiOrder, line);
     npiOrderHelper.recalculateForecastDeliveryDate(npiOrder);
     npiOrderRepository.save(npiOrder);
-    npiOrder.manageNpiStatusBasedProcessLinesStatus();
+    if (newStatus != ProcessLineStatus.ABORTED) {
+      npiOrder.manageNpiStatusBasedProcessLinesStatus();
+    }
 
     return processLineMapper.toListSWProcessLine(npiOrder.getProcessLines());
   }

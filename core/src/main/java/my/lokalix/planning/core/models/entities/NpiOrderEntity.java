@@ -89,6 +89,7 @@ public class NpiOrderEntity {
     if (processLines.stream()
         .allMatch((pl) -> pl.getStatus().equals(ProcessLineStatus.COMPLETED))) {
       setStatus(NpiOrderStatus.COMPLETED);
+      return;
     }
     // if all lines are not started or back to the first process to status not started
     //  set status to ready to start
