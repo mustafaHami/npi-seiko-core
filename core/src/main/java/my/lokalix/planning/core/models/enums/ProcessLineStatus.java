@@ -39,4 +39,8 @@ public enum ProcessLineStatus {
   public boolean isFinalStatus() {
     return this.equals(COMPLETED) || this.equals(ABORTED);
   }
+
+  public boolean isRegressionFrom(ProcessLineStatus current) {
+    return this.ordinal() < current.ordinal();
+  }
 }

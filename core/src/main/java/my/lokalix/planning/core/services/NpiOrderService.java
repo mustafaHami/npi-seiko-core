@@ -169,8 +169,8 @@ public class NpiOrderService {
     processLineValidator.validateStatusUpdate(line, body, npiOrder);
 
     ProcessLineStatus newStatus = ProcessLineStatus.fromValue(body.getStatus().getValue());
-    if (newStatus == ProcessLineStatus.NOT_STARTED) {
-      line.setRemainingTimeInHours(null);
+    if (newStatus.isRegressionFrom(line.getStatus())) {
+      resetLineToDefaultState(line);
     }
     if (newStatus == ProcessLineStatus.IN_PROGRESS) {
       if (line.getIsMaterialPurchase()) {
@@ -189,6 +189,7 @@ public class NpiOrderService {
     }
 
     if (newStatus == ProcessLineStatus.COMPLETED) {
+      line.setRemainingTimeInHours(BigDecimal.valueOf(0));
       if (line.getIsShipment() && body.getShippingDate() == null) {
         throw new IllegalArgumentException(
             "Shipping date cannot be null for completed shipment lines");
