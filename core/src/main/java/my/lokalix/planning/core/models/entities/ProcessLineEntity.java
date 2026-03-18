@@ -14,6 +14,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import my.lokalix.planning.core.models.enums.ProcessLineStatus;
+import my.lokalix.planning.core.models.interfaces.FileInterface;
 import my.lokalix.planning.core.utils.TimeUtils;
 
 @Getter
@@ -21,7 +22,7 @@ import my.lokalix.planning.core.utils.TimeUtils;
 @Entity
 @Table(name = "process_line")
 @EqualsAndHashCode(of = "processLineId")
-public class ProcessLineEntity {
+public class ProcessLineEntity implements FileInterface {
 
   @Setter(AccessLevel.NONE)
   @Id
@@ -94,6 +95,28 @@ public class ProcessLineEntity {
   @OneToMany(mappedBy = "processLine", cascade = CascadeType.ALL, orphanRemoval = true)
   @OrderBy("startDate ASC")
   private List<ProcessLineStatusHistoryEntity> statusesHistory = new ArrayList<>();
+
+  @OneToMany(mappedBy = "processLine", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OrderBy("indexId ASC")
+  private List<FileInfoEntity> attachedFiles = new ArrayList<>();
+
+  public void addAttachedFile(FileInfoEntity fileInfoEntity) {
+    fileInfoEntity.setIndexId(attachedFiles.size());
+    fileInfoEntity.setProcessLine(this);
+    attachedFiles.add(fileInfoEntity);
+  }
+
+  public void removeAttachedFile(FileInfoEntity file) {
+    attachedFiles.remove(file);
+    file.setProcessLine(null);
+    reindexAttachedFiles();
+  }
+
+  private void reindexAttachedFiles() {
+    for (int i = 0; i < attachedFiles.size(); i++) {
+      attachedFiles.get(i).setIndexId(i);
+    }
+  }
 
   public void addStatus(
       OffsetDateTime start, OffsetDateTime end, ProcessLineStatus status, UserEntity user) {

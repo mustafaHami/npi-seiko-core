@@ -3,6 +3,7 @@ package my.lokalix.planning.core.mappers;
 import java.util.List;
 import my.lokalix.planning.core.models.entities.ProcessLineEntity;
 import my.zkonsulting.planning.generated.model.SWProcessLine;
+import org.apache.commons.collections4.CollectionUtils;
 import org.mapstruct.*;
 
 @Mapper(
@@ -20,4 +21,13 @@ public abstract class ProcessLineMapper {
   public abstract SWProcessLine toSWProcessLine(ProcessLineEntity entity);
 
   public abstract List<SWProcessLine> toListSWProcessLine(List<ProcessLineEntity> entities);
+
+  @AfterMapping
+  protected void setNbFiles(ProcessLineEntity entity, @MappingTarget SWProcessLine dto) {
+    if (CollectionUtils.isNotEmpty(entity.getAttachedFiles())) {
+      dto.setNbFiles(entity.getAttachedFiles().size());
+    } else {
+      dto.setNbFiles(0);
+    }
+  }
 }

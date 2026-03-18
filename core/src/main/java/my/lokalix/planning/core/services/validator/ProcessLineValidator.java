@@ -35,62 +35,64 @@ public class ProcessLineValidator {
         throw new GenericWithMessageException(
             "Latest delivery date is required to start this step", SWCustomErrorCode.GENERIC_ERROR);
       }
-      if (line.getIsCustomerApproval() && body.getStartingCustomerApprovalDate() == null) {
-        throw new GenericWithMessageException(
-            "Starting customer approval date is required to start this step",
-            SWCustomErrorCode.GENERIC_ERROR);
+      if (line.getIsCustomerApproval()) {
+        if (body.getStartingCustomerApprovalDate() == null) {
+          throw new GenericWithMessageException(
+              "Starting customer approval date is required to start this step",
+              SWCustomErrorCode.GENERIC_ERROR);
+        }
+        LocalDate shippingDate = findShippingDate(npiOrder);
+        if (shippingDate != null && body.getStartingCustomerApprovalDate().isBefore(shippingDate)) {
+          throw new GenericWithMessageException(
+              "Starting customer approval date ("
+                  + body.getStartingCustomerApprovalDate()
+                  + ") cannot be before the shipping date ("
+                  + shippingDate
+                  + ")",
+              SWCustomErrorCode.GENERIC_ERROR);
+        }
       }
-    }
-    if (newStatus == ProcessLineStatus.COMPLETED
-        && line.getStatus().equals(ProcessLineStatus.NOT_STARTED)
-        && line.getIsCustomerApproval()) {
-      throw new GenericWithMessageException(
-          "Customer approval cannot be completed before it is started",
-          SWCustomErrorCode.GENERIC_ERROR);
-    }
-    if (newStatus == ProcessLineStatus.COMPLETED
-        && line.getIsCustomerApproval()
-        && body.getApprovalCustomerDate() == null) {
-      throw new GenericWithMessageException(
-          "Approval customer date is required to complete this step",
-          SWCustomErrorCode.GENERIC_ERROR);
-    }
-    if ((line.getIsMaterialPurchase() || line.getIsCustomerApproval())
-        && newStatus == ProcessLineStatus.COMPLETED
-        && line.getStatus().equals(ProcessLineStatus.NOT_STARTED)) {
-      throw new GenericWithMessageException(
-          "Cannot complete a step that is not in progress", SWCustomErrorCode.GENERIC_ERROR);
-    }
-
-    if (newStatus == ProcessLineStatus.COMPLETED && line.getIsShipment()) {
-      LocalDate materialLatestDeliveryDate = findMaterialLatestDeliveryDate(npiOrder);
-      if (materialLatestDeliveryDate != null
-          && body.getShippingDate() != null
-          && body.getShippingDate().isBefore(materialLatestDeliveryDate)) {
+    } else if (newStatus == ProcessLineStatus.COMPLETED) {
+      if ((line.getIsMaterialPurchase() || line.getIsCustomerApproval())
+          && line.getStatus().equals(ProcessLineStatus.NOT_STARTED)) {
         throw new GenericWithMessageException(
-            "Shipping date cannot be before the latest material delivery date",
-            SWCustomErrorCode.GENERIC_ERROR);
+            "Cannot complete a step that is not in progress", SWCustomErrorCode.GENERIC_ERROR);
       }
-    }
-
-    if (newStatus == ProcessLineStatus.IN_PROGRESS && line.getIsCustomerApproval()) {
-      LocalDate shippingDate = findShippingDate(npiOrder);
-      if (shippingDate != null
-          && body.getStartingCustomerApprovalDate() != null
-          && body.getStartingCustomerApprovalDate().isBefore(shippingDate)) {
-        throw new GenericWithMessageException(
-            "Starting customer approval date cannot be before the shipping date",
-            SWCustomErrorCode.GENERIC_ERROR);
+      if (line.getIsShipment()) {
+        LocalDate materialLatestDeliveryDate = findMaterialLatestDeliveryDate(npiOrder);
+        if (materialLatestDeliveryDate != null
+            && body.getShippingDate() != null
+            && body.getShippingDate().isBefore(materialLatestDeliveryDate)) {
+          throw new GenericWithMessageException(
+              "Shipping date ("
+                  + body.getShippingDate()
+                  + ") cannot be before the latest material delivery date ("
+                  + materialLatestDeliveryDate
+                  + ")",
+              SWCustomErrorCode.GENERIC_ERROR);
+        }
       }
-    }
-    if (newStatus == ProcessLineStatus.COMPLETED && line.getIsCustomerApproval()) {
-      LocalDate startingCustomerApproval = findStartingCustomerApproval(npiOrder);
-      if (startingCustomerApproval != null
-          && body.getApprovalCustomerDate() != null
-          && body.getApprovalCustomerDate().isBefore(startingCustomerApproval)) {
+      if (line.getIsCustomerApproval()) {
+        if (body.getApprovalCustomerDate() == null) {
+          throw new GenericWithMessageException(
+              "Approval customer date is required to complete this step",
+              SWCustomErrorCode.GENERIC_ERROR);
+        }
+        LocalDate startingCustomerApproval = findStartingCustomerApproval(npiOrder);
+        if (startingCustomerApproval != null
+            && body.getApprovalCustomerDate().isBefore(startingCustomerApproval)) {
+          throw new GenericWithMessageException(
+              "Customer approval date ("
+                  + body.getApprovalCustomerDate()
+                  + ") cannot be before the starting approval date ("
+                  + startingCustomerApproval
+                  + ")",
+              SWCustomErrorCode.GENERIC_ERROR);
+        }
+      }
+      if (line.getIsTesting() && body.getFileUid() == null) {
         throw new GenericWithMessageException(
-            "Customer approval date cannot be before the starting approval date",
-            SWCustomErrorCode.GENERIC_ERROR);
+            "Document is required to complete this step", SWCustomErrorCode.GENERIC_ERROR);
       }
     }
   }

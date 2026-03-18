@@ -30,7 +30,7 @@ public class NpiOrderProcessController {
   public ResponseEntity<List<SWProcessLine>> updateNpiOrderProcessLineStatus(
       @PathVariable final UUID uid,
       @PathVariable final UUID lineUid,
-      @Valid @RequestBody SWProcessLineStatusUpdateBody body) {
+      @Valid @RequestBody SWProcessLineStatusUpdateBody body) throws Exception {
     List<SWProcessLine> result =
         npiOrderService.updateNpiOrderProcessLineStatus(uid, lineUid, body);
     return new ResponseEntity<>(result, HttpStatus.OK);

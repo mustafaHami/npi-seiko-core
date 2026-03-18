@@ -1360,6 +1360,8 @@ components:
         remainingTimeInHours:
           type: number
           format: double
+        fileUid:
+          $ref: '#/components/schemas/Uid'
     Process:
       type: object
       required:

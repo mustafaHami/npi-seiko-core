@@ -24,6 +24,7 @@ public class AppConfigurationProperties {
   @NotBlank private String appBaseUrl;
   @NotNull private Integer startingYear;
   @NotBlank private String temporaryFilesPathDirectory;
+  @NotBlank private String processLineFilesPathDirectory;
 
   private Smtp2go smtp2go = new Smtp2go();
   private ExcelTemplatePaths excelTemplatePaths = new ExcelTemplatePaths();

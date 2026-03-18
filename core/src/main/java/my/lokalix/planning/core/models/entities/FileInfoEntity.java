@@ -28,6 +28,10 @@ public class FileInfoEntity {
   @Enumerated(EnumType.STRING)
   private FileType type = FileType.ANY;
 
+  @ManyToOne
+  @JoinColumn(name = "process_line_id")
+  private ProcessLineEntity processLine;
+
   @Column(nullable = false, name = "index_id")
   private int indexId;
 }

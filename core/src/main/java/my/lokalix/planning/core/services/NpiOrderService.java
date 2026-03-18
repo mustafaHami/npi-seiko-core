@@ -5,13 +5,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import my.lokalix.planning.core.configurations.AppConfigurationProperties;
 import my.lokalix.planning.core.exceptions.GenericWithMessageException;
+import my.lokalix.planning.core.mappers.FileMapper;
 import my.lokalix.planning.core.mappers.NpiOrderMapper;
 import my.lokalix.planning.core.mappers.ProcessLineMapper;
 import my.lokalix.planning.core.mappers.ProcessLineStatusHistoryMapper;
@@ -20,6 +23,7 @@ import my.lokalix.planning.core.models.entities.NpiOrderEntity;
 import my.lokalix.planning.core.models.entities.ProcessEntity;
 import my.lokalix.planning.core.models.entities.ProcessLineEntity;
 import my.lokalix.planning.core.models.entities.ProcessLineStatusHistoryEntity;
+import my.lokalix.planning.core.models.enums.FileType;
 import my.lokalix.planning.core.models.enums.NpiOrderStatus;
 import my.lokalix.planning.core.models.enums.ProcessLineStatus;
 import my.lokalix.planning.core.repositories.NpiOrderRepository;
@@ -28,10 +32,12 @@ import my.lokalix.planning.core.repositories.ProcessLineStatusHistoryRepository;
 import my.lokalix.planning.core.repositories.ProcessRepository;
 import my.lokalix.planning.core.security.LoggedUserDetailsService;
 import my.lokalix.planning.core.services.helper.EntityRetrievalHelper;
+import my.lokalix.planning.core.services.helper.FileHelper;
 import my.lokalix.planning.core.services.helper.NpiOrderHelper;
 import my.lokalix.planning.core.services.validator.NpiValidator;
 import my.lokalix.planning.core.services.validator.ProcessLineValidator;
 import my.lokalix.planning.core.utils.ExcelUtils;
+import my.lokalix.planning.core.utils.GlobalConstants;
 import my.lokalix.planning.core.utils.TimeUtils;
 import my.zkonsulting.planning.generated.model.*;
 import org.apache.commons.collections4.CollectionUtils;
@@ -40,11 +46,13 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @RequiredArgsConstructor
 @Service
@@ -53,6 +61,8 @@ public class NpiOrderService {
   private final NpiOrderMapper npiOrderMapper;
   private final ProcessLineMapper processLineMapper;
   private final ProcessLineStatusHistoryMapper processLineStatusHistoryMapper;
+  private final FileMapper fileMapper;
+  private final FileHelper fileHelper;
   private final NpiOrderRepository npiOrderRepository;
   private final ProcessRepository processRepository;
   private final ProcessLineRepository processLineRepository;
@@ -152,7 +162,7 @@ public class NpiOrderService {
 
   @Transactional
   public List<SWProcessLine> updateNpiOrderProcessLineStatus(
-      UUID npiOrderUid, UUID lineUid, SWProcessLineStatusUpdateBody body) {
+      UUID npiOrderUid, UUID lineUid, SWProcessLineStatusUpdateBody body) throws Exception {
     NpiOrderEntity npiOrder = entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
     ProcessLineEntity line = entityRetrievalHelper.getMustExistProcessLineById(lineUid);
     npiValidator.validateNpiUpdatable(npiOrder);
@@ -189,6 +199,9 @@ public class NpiOrderService {
             "Approval customer date cannot be null for completed customer approval lines");
       }
       line.setApprovalCustomerDate(body.getApprovalCustomerDate());
+      if (line.getIsTesting() && body.getFileUid() != null) {
+        attachTestingDocumentToProcessLine(line, body.getFileUid());
+      }
     }
 
     line.addStatus(
@@ -255,6 +268,53 @@ public class NpiOrderService {
     return npiOrderHelper.buildNpiOrderArchived();
   }
 
+  @Transactional
+  public List<SWFileInfo> retrieveProcessLineFilesMetadata(UUID npiOrderUid, UUID lineUid) {
+    entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
+    ProcessLineEntity line = entityRetrievalHelper.getMustExistProcessLineById(lineUid);
+    return fileMapper.toListFileMetadata(line.getAttachedFiles());
+  }
+
+  @Transactional
+  public List<SWFileInfo> uploadProcessLineFiles(
+      UUID npiOrderUid, UUID lineUid, MultipartFile[] files) throws Exception {
+    entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
+    ProcessLineEntity line = entityRetrievalHelper.getMustExistProcessLineById(lineUid);
+    List<String> filesAdded =
+        fileHelper.uploadFiles(
+            files,
+            appConfigurationProperties.getProcessLineFilesPathDirectory() + line.getProcessLineId(),
+            GlobalConstants.ALLOWED_FILE_EXTENSIONS);
+    fileHelper.addFilesInAttachedFilesListInEntity(line, filesAdded, FileType.ANY);
+    processLineRepository.save(line);
+    return fileMapper.toListFileMetadata(line.getAttachedFiles());
+  }
+
+  @Transactional
+  public Resource downloadProcessLineFiles(UUID npiOrderUid, UUID lineUid, List<UUID> fileUids)
+      throws Exception {
+    entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
+    ProcessLineEntity line = entityRetrievalHelper.getMustExistProcessLineById(lineUid);
+    return fileHelper.downloadFile(
+        appConfigurationProperties.getProcessLineFilesPathDirectory() + line.getProcessLineId(),
+        fileHelper.fileUidsToFileNames(fileUids),
+        GlobalConstants.ZIP_FILE);
+  }
+
+  @Transactional
+  public List<SWFileInfo> deleteProcessLineFiles(
+      UUID npiOrderUid, UUID lineUid, List<UUID> fileUids) throws Exception {
+    entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
+    ProcessLineEntity line = entityRetrievalHelper.getMustExistProcessLineById(lineUid);
+    List<Path> validPaths =
+        fileHelper.deleteMultipleFiles(
+            appConfigurationProperties.getProcessLineFilesPathDirectory() + line.getProcessLineId(),
+            fileHelper.fileUidsToFileNames(fileUids));
+    fileHelper.deleteFilesInAttachedFilesListInEntity(line, validPaths, FileType.ANY);
+    processLineRepository.save(line);
+    return fileMapper.toListFileMetadata(line.getAttachedFiles());
+  }
+
   private void buildProcessLines(
       NpiOrderEntity npiOrder, List<ProcessEntity> processes, SWNpiOrderCreate body) {
     for (ProcessEntity process : processes) {
@@ -293,7 +353,7 @@ public class NpiOrderService {
   }
 
   private void resetFollowingLinesToDefaultState(
-      NpiOrderEntity npiOrder, ProcessLineEntity referenceLine) {
+      NpiOrderEntity npiOrder, ProcessLineEntity referenceLine) throws Exception {
     List<ProcessLineEntity> allLines =
         processLineRepository.findAllByNpiOrderOrderByIndexIdAsc(npiOrder);
     for (ProcessLineEntity line : allLines) {
@@ -312,7 +372,7 @@ public class NpiOrderService {
     }
   }
 
-  private void resetLineToDefaultState(ProcessLineEntity line) {
+  private void resetLineToDefaultState(ProcessLineEntity line) throws Exception {
     line.setRemainingTimeInHours(null);
     if (line.getIsMaterialPurchase()) {
       line.setMaterialLatestDeliveryDate(null);
@@ -324,6 +384,27 @@ public class NpiOrderService {
       line.setStartingCustomerApprovalDate(null);
       line.setApprovalCustomerDate(null);
     }
+    if (line.getIsTesting() && CollectionUtils.isNotEmpty(line.getAttachedFiles())) {
+      List<String> fileNames =
+          line.getAttachedFiles().stream().map(FileInfoEntity::getFileName).toList();
+      fileHelper.deleteMultipleFiles(
+          appConfigurationProperties.getProcessLineFilesPathDirectory() + line.getProcessLineId(),
+          fileNames);
+      new ArrayList<>(line.getAttachedFiles()).forEach(line::removeAttachedFile);
+    }
+  }
+
+  private void attachTestingDocumentToProcessLine(ProcessLineEntity line, UUID fileUid)
+      throws Exception {
+    FileInfoEntity tempFile = entityRetrievalHelper.getMustExistFileEntity(fileUid);
+    String tempDirectory =
+        appConfigurationProperties.getTemporaryFilesPathDirectory() + tempFile.getFileId();
+    String targetDirectory =
+        appConfigurationProperties.getProcessLineFilesPathDirectory() + line.getProcessLineId();
+    fileHelper.copyFiles(List.of(tempFile.getFileName()), tempDirectory, targetDirectory);
+    fileHelper.addFilesInAttachedFilesListInEntity(
+        line, List.of(tempFile.getFileName()), FileType.ANY);
+    fileHelper.deleteTemporaryFiles(List.of(fileUid));
   }
 
   private void calculateAndSetDeliveryDates(NpiOrderEntity entity) {
