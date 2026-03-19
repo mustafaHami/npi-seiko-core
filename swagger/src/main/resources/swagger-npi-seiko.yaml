@@ -1692,6 +1692,10 @@ components:
         customerApprovalPlanTimeInDays:
           type: number
           format: double
+        filesIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Uid'
     NpiOrderUpdate:
       type: object
       required:

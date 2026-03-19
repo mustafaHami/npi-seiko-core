@@ -38,7 +38,8 @@ public class NpiOrderController {
     UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })
   @PostMapping
-  public ResponseEntity<SWNpiOrder> createNpiOrder(@Valid @RequestBody SWNpiOrderCreate body) {
+  public ResponseEntity<SWNpiOrder> createNpiOrder(@Valid @RequestBody SWNpiOrderCreate body)
+      throws Exception {
     SWNpiOrder result = npiOrderService.createNpiOrder(body);
     return new ResponseEntity<>(result, HttpStatus.OK);
   }
@@ -132,8 +133,7 @@ public class NpiOrderController {
     UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
   })
   @GetMapping("/{uid}/files")
-  public ResponseEntity<List<SWFileInfo>> retrieveNpiOrderFilesMetadata(
-      @PathVariable UUID uid) {
+  public ResponseEntity<List<SWFileInfo>> retrieveNpiOrderFilesMetadata(@PathVariable UUID uid) {
     List<SWFileInfo> result = npiOrderService.retrieveNpiOrderFilesMetadata(uid);
     return new ResponseEntity<>(result, HttpStatus.OK);
   }
@@ -156,7 +156,8 @@ public class NpiOrderController {
   @PostMapping("/{uid}/files/download")
   public ResponseEntity<org.springframework.core.io.Resource> downloadNpiOrderFiles(
       @PathVariable UUID uid, @Valid @RequestBody List<UUID> fileUids) throws Exception {
-    org.springframework.core.io.Resource resource = npiOrderService.downloadNpiOrderFiles(uid, fileUids);
+    org.springframework.core.io.Resource resource =
+        npiOrderService.downloadNpiOrderFiles(uid, fileUids);
     String mimeType = Files.probeContentType(resource.getFile().toPath());
     if (mimeType == null) {
       mimeType = "application/octet-stream";

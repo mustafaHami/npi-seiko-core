@@ -384,4 +384,31 @@ public class FileHelper {
           }
         });
   }
+
+  /**
+   * Copy files from temporary directory to entity directory without deleting them from temp.
+   * Returns the list of file IDs that were processed (for later deletion from temp).
+   */
+  public List<UUID> copyFilesFromTemporaryDirectoryToEntityDirectory(
+      FileInterface fileInterfaceOfRequest, String entityId, List<UUID> fileIds) throws Exception {
+    List<UUID> processedFileIds = new ArrayList<>();
+    if (CollectionUtils.isEmpty(fileIds)) {
+      return processedFileIds;
+    }
+    String linePath = appConfigurationProperties.getNpiOrderFilesPathDirectory();
+    for (UUID fileId : fileIds) {
+      FileInfoEntity fileInfoEntity = entityRetrievalHelper.getMustExistFileEntity(fileId);
+      copyFiles(
+          List.of(fileInfoEntity.getFileName()),
+          appConfigurationProperties.getTemporaryFilesPathDirectory()
+              + fileInfoEntity.getFileId().toString(),
+          linePath + entityId);
+      FileInfoEntity newFileInfoEntity = new FileInfoEntity();
+      newFileInfoEntity.setFileName(fileInfoEntity.getFileName());
+      newFileInfoEntity.setType(fileInfoEntity.getType());
+      fileInterfaceOfRequest.addAttachedFile(newFileInfoEntity);
+      processedFileIds.add(fileId);
+    }
+    return processedFileIds;
+  }
 }

@@ -73,7 +73,7 @@ public class NpiOrderService {
   private final NpiOrderHelper npiOrderHelper;
 
   @Transactional
-  public SWNpiOrder createNpiOrder(SWNpiOrderCreate body) {
+  public SWNpiOrder createNpiOrder(SWNpiOrderCreate body) throws Exception {
     List<ProcessEntity> processes = processRepository.findAllByOrderByCreationDateAsc();
     if (CollectionUtils.isEmpty(processes)) {
       throw new GenericWithMessageException(
@@ -86,10 +86,14 @@ public class NpiOrderService {
           entityRetrievalHelper.getMustExistCustomerById(body.getCustomerId());
       entity.setCustomer(customer);
     }
+    List<UUID> fileIdsToDeleteFromTemp =
+        fileHelper.copyFilesFromTemporaryDirectoryToEntityDirectory(
+            entity, entity.getNpiOrderId().toString(), body.getFilesIds());
     buildProcessLines(entity, processes, body);
     calculateAndSetDeliveryDates(entity);
     NpiOrderEntity savedEntity = npiOrderRepository.save(entity);
-
+    // Only delete temporary files after everything succeeded
+    fileHelper.deleteTemporaryFiles(fileIdsToDeleteFromTemp);
     return npiOrderMapper.toSWNpiOrder(savedEntity);
   }
 
