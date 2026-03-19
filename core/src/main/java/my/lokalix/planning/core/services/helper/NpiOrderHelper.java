@@ -258,16 +258,16 @@ public class NpiOrderHelper {
 
     StringBuilder sb = new StringBuilder();
     sb.append(line.getStatus().getHumanReadableValue());
-    if (line.getPlanTimeInHours() != null) {
+    if (line.getPlanTimeInDays() != null) {
       sb.append("; ")
-          .append(line.getPlanTimeInHours().stripTrailingZeros().toPlainString())
-          .append("h");
+          .append(line.getPlanTimeInDays().stripTrailingZeros().toPlainString())
+          .append("d");
     }
     if (line.getStatus() == ProcessLineStatus.IN_PROGRESS
-        && line.getRemainingTimeInHours() != null) {
+        && line.getRemainingTimeInDays() != null) {
       sb.append("; ")
-          .append(line.getRemainingTimeInHours().stripTrailingZeros().toPlainString())
-          .append("h remaining");
+          .append(line.getRemainingTimeInDays().stripTrailingZeros().toPlainString())
+          .append("d remaining");
     }
     if (line.getCurrentStatusDate() != null) {
       sb.append("; ").append(line.getCurrentStatusDate().toLocalDate());
@@ -297,25 +297,24 @@ public class NpiOrderHelper {
         processLineRepository.findAllByNpiOrderOrderByIndexIdAsc(npiOrder);
 
     LocalDate today = TimeUtils.nowLocalDate(appConfigurationProperties.getAppTimezone());
-    final BigDecimal hoursPerDay = BigDecimal.valueOf(24.0);
 
-    BigDecimal totalForecastHours = BigDecimal.valueOf(0);
+    BigDecimal totalForecastDays = BigDecimal.valueOf(0);
     for (ProcessLineEntity line : allLines) {
       ProcessLineStatus status = line.getStatus();
-      BigDecimal remainingTimeInHours = line.getRemainingTimeInHours();
-      BigDecimal planTimeInHours = line.getPlanTimeInHours();
+      BigDecimal remainingTimeInDays = line.getRemainingTimeInDays();
+      BigDecimal planTimeInDays = line.getPlanTimeInDays();
 
       if (status == ProcessLineStatus.IN_PROGRESS) {
         BigDecimal timeToAdd =
-            remainingTimeInHours != null ? remainingTimeInHours : planTimeInHours;
+            remainingTimeInDays != null ? remainingTimeInDays : planTimeInDays;
         if (timeToAdd != null) {
-          totalForecastHours = totalForecastHours.add(timeToAdd);
+          totalForecastDays = totalForecastDays.add(timeToAdd);
         }
-      } else if (status == ProcessLineStatus.NOT_STARTED && planTimeInHours != null) {
-        totalForecastHours = totalForecastHours.add(planTimeInHours);
+      } else if (status == ProcessLineStatus.NOT_STARTED && planTimeInDays != null) {
+        totalForecastDays = totalForecastDays.add(planTimeInDays);
       }
     }
-    long forecastDays = totalForecastHours.divide(hoursPerDay, 0, RoundingMode.CEILING).longValue();
+    long forecastDays = totalForecastDays.setScale(0, RoundingMode.CEILING).longValue();
     npiOrder.setForecastDeliveryDate(today.plusDays(forecastDays));
     npiOrderRepository.save(npiOrder);
   }

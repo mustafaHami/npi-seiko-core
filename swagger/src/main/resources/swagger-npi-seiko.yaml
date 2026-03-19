@@ -1314,9 +1314,9 @@ components:
     ProcessLineRemainingTimeUpdate:
       type: object
       required:
-        - remainingTimeInHours
+        - remainingTimeInDays
       properties:
-        remainingTimeInHours:
+        remainingTimeInDays:
           type: number
           format: double
     ProcessLineMaterialDeliveryDateImport:
@@ -1357,7 +1357,7 @@ components:
         approvalCustomerDate:
           type: string
           format: date
-        remainingTimeInHours:
+        remainingTimeInDays:
           type: number
           format: double
         fileUid:
@@ -1389,7 +1389,7 @@ components:
           type: string
         status:
           $ref: "#/components/schemas/ProcessLineStatus"
-        remainingTimeInHours:
+        remainingTimeInDays:
           type: number
           format: double
         materialLatestDeliveryDate:
@@ -1404,7 +1404,7 @@ components:
         approvalCustomerDate:
           type: string
           format: date
-        planTimeInHours:
+        planTimeInDays:
           type: number
           format: double
         nbFiles:
@@ -1440,12 +1440,12 @@ components:
         - workOrderId
         - partNumber
         - quantity
-        - materialPurchasePlanTimeInHours
-        - materialReceivingPlanTimeInHours
-        - productionPlanTimeInHours
-        - testingPlanTimeInHours
-        - shippingPlanTimeInHours
-        - customerApprovalPlanTimeInHours
+        - materialPurchasePlanTimeInDays
+        - materialReceivingPlanTimeInDays
+        - productionPlanTimeInDays
+        - testingPlanTimeInDays
+        - shippingPlanTimeInDays
+        - customerApprovalPlanTimeInDays
       properties:
         purchaseOrderNumber:
           type: string
@@ -1465,22 +1465,22 @@ components:
           type: string
         productName:
           type: string
-        materialPurchasePlanTimeInHours:
+        materialPurchasePlanTimeInDays:
           type: number
           format: double
-        materialReceivingPlanTimeInHours:
+        materialReceivingPlanTimeInDays:
           type: number
           format: double
-        productionPlanTimeInHours:
+        productionPlanTimeInDays:
           type: number
           format: double
-        testingPlanTimeInHours:
+        testingPlanTimeInDays:
           type: number
           format: double
-        shippingPlanTimeInHours:
+        shippingPlanTimeInDays:
           type: number
           format: double
-        customerApprovalPlanTimeInHours:
+        customerApprovalPlanTimeInDays:
           type: number
           format: double
     NpiOrderUpdate:
@@ -1509,22 +1509,22 @@ components:
           type: string
         productName:
           type: string
-        materialPurchasePlanTimeInHours:
+        materialPurchasePlanTimeInDays:
           type: number
           format: double
-        materialReceivingPlanTimeInHours:
+        materialReceivingPlanTimeInDays:
           type: number
           format: double
-        productionPlanTimeInHours:
+        productionPlanTimeInDays:
           type: number
           format: double
-        testingPlanTimeInHours:
+        testingPlanTimeInDays:
           type: number
           format: double
-        shippingPlanTimeInHours:
+        shippingPlanTimeInDays:
           type: number
           format: double
-        customerApprovalPlanTimeInHours:
+        customerApprovalPlanTimeInDays:
           type: number
           format: double
     NpiOrder:
@@ -1562,22 +1562,22 @@ components:
           type: string
         productName:
           type: string
-        materialPurchasePlanTimeInHours:
+        materialPurchasePlanTimeInDays:
           type: number
           format: double
-        materialReceivingPlanTimeInHours:
+        materialReceivingPlanTimeInDays:
           type: number
           format: double
-        productionPlanTimeInHours:
+        productionPlanTimeInDays:
           type: number
           format: double
-        testingPlanTimeInHours:
+        testingPlanTimeInDays:
           type: number
           format: double
-        shippingPlanTimeInHours:
+        shippingPlanTimeInDays:
           type: number
           format: double
-        customerApprovalPlanTimeInHours:
+        customerApprovalPlanTimeInDays:
           type: number
           format: double
         status:

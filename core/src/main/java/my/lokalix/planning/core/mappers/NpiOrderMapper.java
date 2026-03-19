@@ -23,27 +23,27 @@ public abstract class NpiOrderMapper {
   @Mapping(target = "currentProcessName", expression = "java(entity.getCurrentProcessName())")
   @Mapping(
       source = "processLines",
-      target = "materialPurchasePlanTimeInHours",
+      target = "materialPurchasePlanTimeInDays",
       qualifiedByName = "getMaterialPurchasePlanTime")
   @Mapping(
       source = "processLines",
-      target = "materialReceivingPlanTimeInHours",
+      target = "materialReceivingPlanTimeInDays",
       qualifiedByName = "getMaterialReceivingPlanTime")
   @Mapping(
       source = "processLines",
-      target = "productionPlanTimeInHours",
+      target = "productionPlanTimeInDays",
       qualifiedByName = "getProductionPlanTime")
   @Mapping(
       source = "processLines",
-      target = "testingPlanTimeInHours",
+      target = "testingPlanTimeInDays",
       qualifiedByName = "getTestingPlanTime")
   @Mapping(
       source = "processLines",
-      target = "shippingPlanTimeInHours",
+      target = "shippingPlanTimeInDays",
       qualifiedByName = "getShippingPlanTime")
   @Mapping(
       source = "processLines",
-      target = "customerApprovalPlanTimeInHours",
+      target = "customerApprovalPlanTimeInDays",
       qualifiedByName = "getCustomerApprovalPlanTime")
   public abstract SWNpiOrder toSWNpiOrder(NpiOrderEntity entity);
 
@@ -93,7 +93,7 @@ public abstract class NpiOrderMapper {
     }
     for (ProcessLineEntity line : processLines) {
       if (isMatchingLineType(line, lineType)) {
-        return line.getPlanTimeInHours();
+        return line.getPlanTimeInDays();
       }
     }
     return null;

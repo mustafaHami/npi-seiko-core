@@ -110,9 +110,9 @@ public class NpiOrderService {
         .getProcessLines()
         .forEach(
             line -> {
-              BigDecimal planTimeInHours = getPlanTimeForProcessLineFromUpdate(line, body);
-              if (planTimeInHours != null) {
-                line.setPlanTimeInHours(planTimeInHours);
+              BigDecimal planTimeInDays = getPlanTimeForProcessLineFromUpdate(line, body);
+              if (planTimeInDays != null) {
+                line.setPlanTimeInDays(planTimeInDays);
               }
             });
     calculateAndSetDeliveryDates(entity);
@@ -184,12 +184,12 @@ public class NpiOrderService {
         line.setStartingCustomerApprovalDate(body.getStartingCustomerApprovalDate());
       }
       if (line.getIsProduction() || line.getIsTesting()) {
-        line.setRemainingTimeInHours(body.getRemainingTimeInHours());
+        line.setRemainingTimeInDays(body.getRemainingTimeInDays());
       }
     }
 
     if (newStatus == ProcessLineStatus.COMPLETED) {
-      line.setRemainingTimeInHours(BigDecimal.valueOf(0));
+      line.setRemainingTimeInDays(BigDecimal.valueOf(0));
       if (line.getIsShipment() && body.getShippingDate() == null) {
         throw new IllegalArgumentException(
             "Shipping date cannot be null for completed shipment lines");
@@ -328,29 +328,29 @@ public class NpiOrderService {
       line.setIsTesting(process.getIsTesting());
       line.setIsShipment(process.getIsShipment());
       line.setIsCustomerApproval(process.getIsCustomerApproval());
-      line.setPlanTimeInHours(getPlanTimeForProcess(process, body));
+      line.setPlanTimeInDays(getPlanTimeForProcess(process, body));
       npiOrder.addProcessLine(line);
     }
   }
 
   private BigDecimal getPlanTimeForProcess(ProcessEntity process, SWNpiOrderCreate body) {
-    if (process.getIsMaterialPurchase()) return body.getMaterialPurchasePlanTimeInHours();
-    if (process.getIsMaterialReceiving()) return body.getMaterialReceivingPlanTimeInHours();
-    if (process.getIsProduction()) return body.getProductionPlanTimeInHours();
-    if (process.getIsTesting()) return body.getTestingPlanTimeInHours();
-    if (process.getIsShipment()) return body.getShippingPlanTimeInHours();
-    if (process.getIsCustomerApproval()) return body.getCustomerApprovalPlanTimeInHours();
+    if (process.getIsMaterialPurchase()) return body.getMaterialPurchasePlanTimeInDays();
+    if (process.getIsMaterialReceiving()) return body.getMaterialReceivingPlanTimeInDays();
+    if (process.getIsProduction()) return body.getProductionPlanTimeInDays();
+    if (process.getIsTesting()) return body.getTestingPlanTimeInDays();
+    if (process.getIsShipment()) return body.getShippingPlanTimeInDays();
+    if (process.getIsCustomerApproval()) return body.getCustomerApprovalPlanTimeInDays();
     return null;
   }
 
   private BigDecimal getPlanTimeForProcessLineFromUpdate(
       ProcessLineEntity line, SWNpiOrderUpdate body) {
-    if (line.getIsMaterialPurchase()) return body.getMaterialPurchasePlanTimeInHours();
-    if (line.getIsMaterialReceiving()) return body.getMaterialReceivingPlanTimeInHours();
-    if (line.getIsProduction()) return body.getProductionPlanTimeInHours();
-    if (line.getIsTesting()) return body.getTestingPlanTimeInHours();
-    if (line.getIsShipment()) return body.getShippingPlanTimeInHours();
-    if (line.getIsCustomerApproval()) return body.getCustomerApprovalPlanTimeInHours();
+    if (line.getIsMaterialPurchase()) return body.getMaterialPurchasePlanTimeInDays();
+    if (line.getIsMaterialReceiving()) return body.getMaterialReceivingPlanTimeInDays();
+    if (line.getIsProduction()) return body.getProductionPlanTimeInDays();
+    if (line.getIsTesting()) return body.getTestingPlanTimeInDays();
+    if (line.getIsShipment()) return body.getShippingPlanTimeInDays();
+    if (line.getIsCustomerApproval()) return body.getCustomerApprovalPlanTimeInDays();
     return null;
   }
 
@@ -375,7 +375,7 @@ public class NpiOrderService {
   }
 
   private void resetLineToDefaultState(ProcessLineEntity line) throws Exception {
-    line.setRemainingTimeInHours(null);
+    line.setRemainingTimeInDays(null);
     if (line.getIsMaterialPurchase()) {
       line.setMaterialLatestDeliveryDate(null);
     }
@@ -413,12 +413,11 @@ public class NpiOrderService {
     if (entity.getOrderDate() == null) {
       return;
     }
-    double totalHours =
+    long totalDays =
         entity.getProcessLines().stream()
-            .filter(l -> l.getPlanTimeInHours() != null)
-            .mapToDouble(l -> l.getPlanTimeInHours().doubleValue())
+            .filter(l -> l.getPlanTimeInDays() != null)
+            .mapToLong(l -> l.getPlanTimeInDays().longValue())
             .sum();
-    long totalDays = (long) Math.ceil(totalHours / 24.0);
     LocalDate baseDate =
         entity
                 .getOrderDate()
@@ -436,13 +435,13 @@ public class NpiOrderService {
     NpiOrderEntity npiOrder = entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
     ProcessLineEntity line = entityRetrievalHelper.getMustExistProcessLineById(lineUid);
     processLineValidator.validateRemainingTimeUpdate(line);
-    BigDecimal previousRemainingTimeInHours = line.getRemainingTimeInHours();
-    line.setRemainingTimeInHours(body.getRemainingTimeInHours());
-    if ((previousRemainingTimeInHours == null && body.getRemainingTimeInHours() != null)
-        || (previousRemainingTimeInHours != null && body.getRemainingTimeInHours() == null)
-        || (previousRemainingTimeInHours != null
-            && body.getRemainingTimeInHours() != null
-            && previousRemainingTimeInHours.compareTo(body.getRemainingTimeInHours()) != 0)) {
+    BigDecimal previousRemainingTimeInDays = line.getRemainingTimeInDays();
+    line.setRemainingTimeInDays(body.getRemainingTimeInDays());
+    if ((previousRemainingTimeInDays == null && body.getRemainingTimeInDays() != null)
+        || (previousRemainingTimeInDays != null && body.getRemainingTimeInDays() == null)
+        || (previousRemainingTimeInDays != null
+            && body.getRemainingTimeInDays() != null
+            && previousRemainingTimeInDays.compareTo(body.getRemainingTimeInDays()) != 0)) {
       processLineRepository.save(line);
       npiOrderHelper.recalculateForecastDeliveryDate(npiOrder);
       npiOrderRepository.save(npiOrder);

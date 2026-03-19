@@ -76,10 +76,10 @@ public class ProcessLineEntity implements FileInterface {
   private OffsetDateTime currentStatusDate = TimeUtils.nowOffsetDateTimeUTC();
 
   @Column(precision = 25, scale = 6)
-  private BigDecimal planTimeInHours;
+  private BigDecimal planTimeInDays;
 
   @Column(precision = 25, scale = 6)
-  private BigDecimal remainingTimeInHours;
+  private BigDecimal remainingTimeInDays;
 
   private LocalDate materialLatestDeliveryDate;
 

@@ -80,12 +80,12 @@ public class HiddenController {
     body.setProductName(productName);
     body.setCustomerName(customerName);
     body.setQuantity(quantity);
-    body.setMaterialPurchasePlanTimeInHours(BigDecimal.valueOf(materialPurchase));
-    body.setMaterialReceivingPlanTimeInHours(BigDecimal.valueOf(materialReceiving));
-    body.setProductionPlanTimeInHours(BigDecimal.valueOf(production));
-    body.setTestingPlanTimeInHours(BigDecimal.valueOf(testing));
-    body.setShippingPlanTimeInHours(BigDecimal.valueOf(shipping));
-    body.setCustomerApprovalPlanTimeInHours(BigDecimal.valueOf(customerApproval));
+    body.setMaterialPurchasePlanTimeInDays(BigDecimal.valueOf(materialPurchase));
+    body.setMaterialReceivingPlanTimeInDays(BigDecimal.valueOf(materialReceiving));
+    body.setProductionPlanTimeInDays(BigDecimal.valueOf(production));
+    body.setTestingPlanTimeInDays(BigDecimal.valueOf(testing));
+    body.setShippingPlanTimeInDays(BigDecimal.valueOf(shipping));
+    body.setCustomerApprovalPlanTimeInDays(BigDecimal.valueOf(customerApproval));
     body.setOrderDate(LocalDate.now().plusDays(orderDateOffsetDays));
     body.setTargetDeliveryDate(LocalDate.now().plusDays((long) (orderDateOffsetDays + totalHours + 5)));
     return body;
