@@ -296,9 +296,13 @@ public class NpiOrderHelper {
         processLineRepository.findAllByNpiOrderOrderByIndexIdAsc(npiOrder);
 
     LocalDate today = TimeUtils.nowLocalDate(appConfigurationProperties.getAppTimezone());
+    LocalDate baseDate = resolveBaseDate(npiOrder, allLines, today);
 
     BigDecimal totalForecastDays = BigDecimal.valueOf(0);
     for (ProcessLineEntity line : allLines) {
+      if (Boolean.TRUE.equals(line.getIsMaterialPurchase())) {
+        continue; // material purchase is a date, not a duration
+      }
       ProcessLineStatus status = line.getStatus();
       BigDecimal remainingTimeInDays = line.getRemainingTimeInDays();
       BigDecimal planTimeInDays = line.getPlanTimeInDays();
@@ -314,8 +318,33 @@ public class NpiOrderHelper {
       }
     }
     long forecastDays = totalForecastDays.setScale(0, RoundingMode.CEILING).longValue();
-    npiOrder.setForecastDeliveryDate(today.plusDays(forecastDays));
+    npiOrder.setForecastDeliveryDate(TimeUtils.addBusinessDays(baseDate, forecastDays));
     npiOrderRepository.save(npiOrder);
+  }
+
+  private LocalDate resolveBaseDate(
+      NpiOrderEntity npiOrder, List<ProcessLineEntity> allLines, LocalDate today) {
+    Optional<ProcessLineEntity> materialPurchaseLineOpt =
+        allLines.stream().filter(l -> Boolean.TRUE.equals(l.getIsMaterialPurchase())).findFirst();
+
+    if (materialPurchaseLineOpt.isEmpty()) {
+      return today;
+    }
+
+    ProcessLineEntity materialPurchaseLine = materialPurchaseLineOpt.get();
+    return switch (materialPurchaseLine.getStatus()) {
+      case NOT_STARTED -> {
+        LocalDate estimatedDate = npiOrder.getMaterialPurchaseEstimatedDate();
+        yield (estimatedDate != null && estimatedDate.isAfter(today)) ? estimatedDate : today;
+      }
+      case IN_PROGRESS -> {
+        LocalDate latestDeliveryDate = materialPurchaseLine.getMaterialLatestDeliveryDate();
+        yield (latestDeliveryDate != null && latestDeliveryDate.isAfter(today))
+            ? latestDeliveryDate
+            : today;
+      }
+      default -> today; // COMPLETED or ABORTED: materials already handled
+    };
   }
 
   public int recalculateForecastDeliveryDateForAllActiveNpiOrders() {

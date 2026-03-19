@@ -86,10 +86,11 @@ public class NpiOrderService {
           entityRetrievalHelper.getMustExistCustomerById(body.getCustomerId());
       entity.setCustomer(customer);
     }
+    npiValidator.validateNpiOrderDates(entity);
     List<UUID> fileIdsToDeleteFromTemp =
         fileHelper.copyFilesFromTemporaryDirectoryToEntityDirectory(
             entity, entity.getNpiOrderId().toString(), body.getFilesIds());
-    buildProcessLines(entity, processes, body);
+    buildProcessLines(entity, processes);
     calculateAndSetDeliveryDates(entity);
     NpiOrderEntity savedEntity = npiOrderRepository.save(entity);
     // Only delete temporary files after everything succeeded
@@ -117,17 +118,8 @@ public class NpiOrderService {
           entityRetrievalHelper.getMustExistCustomerById(body.getCustomerId());
       entity.setCustomer(customer);
     }
-    entity
-        .getProcessLines()
-        .forEach(
-            line -> {
-              BigDecimal planTimeInDays = getPlanTimeForProcessLineFromUpdate(line, body);
-              if (planTimeInDays != null) {
-                line.setPlanTimeInDays(planTimeInDays);
-              }
-            });
+    npiValidator.validateNpiOrderDates(entity);
     calculateAndSetDeliveryDates(entity);
-    npiOrderHelper.recalculateForecastDeliveryDate(entity);
     return npiOrderMapper.toSWNpiOrder(npiOrderRepository.save(entity));
   }
 
@@ -374,8 +366,7 @@ public class NpiOrderService {
     return fileMapper.toListFileMetadata(line.getAttachedFiles());
   }
 
-  private void buildProcessLines(
-      NpiOrderEntity npiOrder, List<ProcessEntity> processes, SWNpiOrderCreate body) {
+  private void buildProcessLines(NpiOrderEntity npiOrder, List<ProcessEntity> processes) {
     for (ProcessEntity process : processes) {
       ProcessLineEntity line = new ProcessLineEntity();
       line.setProcessName(process.getName());
@@ -385,30 +376,8 @@ public class NpiOrderService {
       line.setIsTesting(process.getIsTesting());
       line.setIsShipment(process.getIsShipment());
       line.setIsCustomerApproval(process.getIsCustomerApproval());
-      line.setPlanTimeInDays(getPlanTimeForProcess(process, body));
       npiOrder.addProcessLine(line);
     }
-  }
-
-  private BigDecimal getPlanTimeForProcess(ProcessEntity process, SWNpiOrderCreate body) {
-    if (process.getIsMaterialPurchase()) return body.getMaterialPurchasePlanTimeInDays();
-    if (process.getIsMaterialReceiving()) return body.getMaterialReceivingPlanTimeInDays();
-    if (process.getIsProduction()) return body.getProductionPlanTimeInDays();
-    if (process.getIsTesting()) return body.getTestingPlanTimeInDays();
-    if (process.getIsShipment()) return body.getShippingPlanTimeInDays();
-    if (process.getIsCustomerApproval()) return body.getCustomerApprovalPlanTimeInDays();
-    return null;
-  }
-
-  private BigDecimal getPlanTimeForProcessLineFromUpdate(
-      ProcessLineEntity line, SWNpiOrderUpdate body) {
-    if (line.getIsMaterialPurchase()) return body.getMaterialPurchasePlanTimeInDays();
-    if (line.getIsMaterialReceiving()) return body.getMaterialReceivingPlanTimeInDays();
-    if (line.getIsProduction()) return body.getProductionPlanTimeInDays();
-    if (line.getIsTesting()) return body.getTestingPlanTimeInDays();
-    if (line.getIsShipment()) return body.getShippingPlanTimeInDays();
-    if (line.getIsCustomerApproval()) return body.getCustomerApprovalPlanTimeInDays();
-    return null;
   }
 
   private void resetFollowingLinesToDefaultState(
@@ -467,23 +436,54 @@ public class NpiOrderService {
   }
 
   private void calculateAndSetDeliveryDates(NpiOrderEntity entity) {
-    if (entity.getOrderDate() == null) {
+    LocalDate materialPurchaseDate = entity.getMaterialPurchaseEstimatedDate();
+    LocalDate shippingDate = entity.getShippingEstimatedDate();
+    LocalDate customerApprovalDate = entity.getCustomerApprovalEstimatedDate();
+
+    if (materialPurchaseDate == null || shippingDate == null || customerApprovalDate == null) {
       return;
     }
-    long totalDays =
-        entity.getProcessLines().stream()
-            .filter(l -> l.getPlanTimeInDays() != null)
-            .mapToLong(l -> l.getPlanTimeInDays().longValue())
-            .sum();
-    LocalDate baseDate =
-        entity
-                .getOrderDate()
-                .isBefore(TimeUtils.nowLocalDate(appConfigurationProperties.getAppTimezone()))
-            ? TimeUtils.nowLocalDate(appConfigurationProperties.getAppTimezone())
-            : entity.getOrderDate();
-    LocalDate plannedDate = baseDate.plusDays(totalDays);
-    entity.setPlannedDeliveryDate(plannedDate);
-    entity.setForecastDeliveryDate(plannedDate);
+
+    long receivingDays = ceilDays(entity.getMaterialReceivingPlanTimeInDays());
+    long productionDays = ceilDays(entity.getProductionPlanTimeInDays());
+    long testingDays = ceilDays(entity.getTestingPlanTimeInDays());
+
+    // Derive shipping and customer approval durations from the original plan
+    LocalDate endOfTestingPlanned =
+        TimeUtils.addBusinessDays(materialPurchaseDate, receivingDays + productionDays + testingDays);
+    long shippingDuration = TimeUtils.businessDaysBetween(endOfTestingPlanned, shippingDate);
+    long customerApprovalDuration = TimeUtils.businessDaysBetween(shippingDate, customerApprovalDate);
+
+    // Propagate plan times to each process line
+    entity.getProcessLines().forEach(line -> {
+      if (Boolean.TRUE.equals(line.getIsMaterialPurchase())) {
+        line.setPlanTimeInDays(null);
+      } else if (Boolean.TRUE.equals(line.getIsMaterialReceiving())) {
+        line.setPlanTimeInDays(entity.getMaterialReceivingPlanTimeInDays());
+      } else if (Boolean.TRUE.equals(line.getIsProduction())) {
+        line.setPlanTimeInDays(entity.getProductionPlanTimeInDays());
+      } else if (Boolean.TRUE.equals(line.getIsTesting())) {
+        line.setPlanTimeInDays(entity.getTestingPlanTimeInDays());
+      } else if (Boolean.TRUE.equals(line.getIsShipment())) {
+        line.setPlanTimeInDays(BigDecimal.valueOf(shippingDuration));
+      } else if (Boolean.TRUE.equals(line.getIsCustomerApproval())) {
+        line.setPlanTimeInDays(BigDecimal.valueOf(customerApprovalDuration));
+      }
+    });
+
+    // Planned delivery date = customer approval estimated date
+    entity.setPlannedDeliveryDate(customerApprovalDate);
+
+    // Initial forecast: today + all derived business days
+    LocalDate today = TimeUtils.nowLocalDate(appConfigurationProperties.getAppTimezone());
+    long totalForecastDays =
+        receivingDays + productionDays + testingDays + shippingDuration + customerApprovalDuration;
+    entity.setForecastDeliveryDate(TimeUtils.addBusinessDays(today, totalForecastDays));
+  }
+
+  private long ceilDays(BigDecimal days) {
+    if (days == null) return 0;
+    return days.setScale(0, java.math.RoundingMode.CEILING).longValue();
   }
 
   @Transactional

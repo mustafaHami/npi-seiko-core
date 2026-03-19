@@ -1651,12 +1651,12 @@ components:
         - workOrderId
         - partNumber
         - quantity
-        - materialPurchasePlanTimeInDays
+        - materialPurchaseEstimatedDate
         - materialReceivingPlanTimeInDays
         - productionPlanTimeInDays
         - testingPlanTimeInDays
-        - shippingPlanTimeInDays
-        - customerApprovalPlanTimeInDays
+        - shippingEstimatedDate
+        - customerApprovalEstimatedDate
       properties:
         purchaseOrderNumber:
           type: string
@@ -1676,9 +1676,9 @@ components:
           $ref: '#/components/schemas/Uid'
         productName:
           type: string
-        materialPurchasePlanTimeInDays:
-          type: number
-          format: double
+        materialPurchaseEstimatedDate:
+          type: string
+          format: date
         materialReceivingPlanTimeInDays:
           type: number
           format: double
@@ -1688,12 +1688,12 @@ components:
         testingPlanTimeInDays:
           type: number
           format: double
-        shippingPlanTimeInDays:
-          type: number
-          format: double
-        customerApprovalPlanTimeInDays:
-          type: number
-          format: double
+        shippingEstimatedDate:
+          type: string
+          format: date
+        customerApprovalEstimatedDate:
+          type: string
+          format: date
         filesIds:
           type: array
           items:
@@ -1724,9 +1724,9 @@ components:
           $ref: '#/components/schemas/Uid'
         productName:
           type: string
-        materialPurchasePlanTimeInDays:
-          type: number
-          format: double
+        materialPurchaseEstimatedDate:
+          type: string
+          format: date
         materialReceivingPlanTimeInDays:
           type: number
           format: double
@@ -1736,12 +1736,12 @@ components:
         testingPlanTimeInDays:
           type: number
           format: double
-        shippingPlanTimeInDays:
-          type: number
-          format: double
-        customerApprovalPlanTimeInDays:
-          type: number
-          format: double
+        shippingEstimatedDate:
+          type: string
+          format: date
+        customerApprovalEstimatedDate:
+          type: string
+          format: date
     NpiOrder:
       type: object
       required:
@@ -1777,9 +1777,9 @@ components:
           $ref: '#/components/schemas/Customer'
         productName:
           type: string
-        materialPurchasePlanTimeInDays:
-          type: number
-          format: double
+        materialPurchaseEstimatedDate:
+          type: string
+          format: date
         materialReceivingPlanTimeInDays:
           type: number
           format: double
@@ -1789,12 +1789,12 @@ components:
         testingPlanTimeInDays:
           type: number
           format: double
-        shippingPlanTimeInDays:
-          type: number
-          format: double
-        customerApprovalPlanTimeInDays:
-          type: number
-          format: double
+        shippingEstimatedDate:
+          type: string
+          format: date
+        customerApprovalEstimatedDate:
+          type: string
+          format: date
         status:
           $ref: '#/components/schemas/NpiOrderStatus'
         currentProcessName:

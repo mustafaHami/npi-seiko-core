@@ -3,6 +3,7 @@ package my.lokalix.planning.core.models.entities;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -53,6 +54,21 @@ public class NpiOrderEntity implements FileInterface {
   private LocalDate targetDeliveryDate;
   private String customerName;
   private String productName;
+
+  private LocalDate materialPurchaseEstimatedDate;
+
+  @Column(precision = 25, scale = 6)
+  private BigDecimal materialReceivingPlanTimeInDays;
+
+  @Column(precision = 25, scale = 6)
+  private BigDecimal productionPlanTimeInDays;
+
+  @Column(precision = 25, scale = 6)
+  private BigDecimal testingPlanTimeInDays;
+
+  private LocalDate shippingEstimatedDate;
+
+  private LocalDate customerApprovalEstimatedDate;
 
   @NotNull
   @Column(nullable = false)

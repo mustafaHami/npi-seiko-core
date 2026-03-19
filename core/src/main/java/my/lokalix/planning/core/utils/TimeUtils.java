@@ -124,4 +124,49 @@ public final class TimeUtils {
     double seconds = duration.toSeconds();
     return seconds / 86400.0; // 24 * 60 * 60
   }
+
+  /**
+   * Adds the given number of business days (Monday–Friday) to a start date.
+   * If the start date itself is a weekend, moves to the next Monday first.
+   */
+  public static LocalDate addBusinessDays(LocalDate startDate, long businessDays) {
+    LocalDate date = skipWeekend(startDate);
+    long added = 0;
+    while (added < businessDays) {
+      date = date.plusDays(1);
+      if (!isWeekend(date)) {
+        added++;
+      }
+    }
+    return date;
+  }
+
+  /**
+   * Counts the number of business days (Monday–Friday) between two dates (exclusive of end).
+   * Returns a non-negative value; if end is before start, returns 0.
+   */
+  public static long businessDaysBetween(LocalDate start, LocalDate end) {
+    if (!end.isAfter(start)) return 0;
+    long count = 0;
+    LocalDate date = start;
+    while (date.isBefore(end)) {
+      if (!isWeekend(date)) {
+        count++;
+      }
+      date = date.plusDays(1);
+    }
+    return count;
+  }
+
+  private static boolean isWeekend(LocalDate date) {
+    DayOfWeek day = date.getDayOfWeek();
+    return day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY;
+  }
+
+  private static LocalDate skipWeekend(LocalDate date) {
+    while (isWeekend(date)) {
+      date = date.plusDays(1);
+    }
+    return date;
+  }
 }
