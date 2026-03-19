@@ -22,6 +22,7 @@ public abstract class NpiOrderMapper {
 
   @Mapping(source = "npiOrderId", target = "uid")
   @Mapping(target = "currentProcessName", expression = "java(entity.getCurrentProcessName())")
+  @Mapping(target = "nbFiles", expression = "java(entity.getAttachedFiles().size())")
   @Mapping(
       source = "processLines",
       target = "materialPurchasePlanTimeInDays",

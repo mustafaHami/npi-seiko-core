@@ -131,6 +131,58 @@ public class NpiOrderController {
     UserRole.SecurityConstants.ADMINISTRATOR,
     UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
   })
+  @GetMapping("/{uid}/files")
+  public ResponseEntity<List<SWFileInfo>> retrieveNpiOrderFilesMetadata(
+      @PathVariable UUID uid) {
+    List<SWFileInfo> result = npiOrderService.retrieveNpiOrderFilesMetadata(uid);
+    return new ResponseEntity<>(result, HttpStatus.OK);
+  }
+
+  @Secured({
+    UserRole.SecurityConstants.ADMINISTRATOR,
+    UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
+  })
+  @PostMapping("/{uid}/files/upload")
+  public ResponseEntity<List<SWFileInfo>> uploadNpiOrderFiles(
+      @PathVariable UUID uid, @RequestParam("files") MultipartFile[] files) throws Exception {
+    List<SWFileInfo> result = npiOrderService.uploadNpiOrderFiles(uid, files);
+    return new ResponseEntity<>(result, HttpStatus.OK);
+  }
+
+  @Secured({
+    UserRole.SecurityConstants.ADMINISTRATOR,
+    UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
+  })
+  @PostMapping("/{uid}/files/download")
+  public ResponseEntity<org.springframework.core.io.Resource> downloadNpiOrderFiles(
+      @PathVariable UUID uid, @Valid @RequestBody List<UUID> fileUids) throws Exception {
+    org.springframework.core.io.Resource resource = npiOrderService.downloadNpiOrderFiles(uid, fileUids);
+    String mimeType = Files.probeContentType(resource.getFile().toPath());
+    if (mimeType == null) {
+      mimeType = "application/octet-stream";
+    }
+    String encodedFilename = UriUtils.encode(resource.getFilename(), StandardCharsets.UTF_8);
+    return ResponseEntity.ok()
+        .contentType(MediaType.parseMediaType(mimeType))
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedFilename)
+        .body(resource);
+  }
+
+  @Secured({
+    UserRole.SecurityConstants.ADMINISTRATOR,
+    UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
+  })
+  @PostMapping("/{uid}/files/delete")
+  public ResponseEntity<List<SWFileInfo>> deleteNpiOrderFiles(
+      @PathVariable UUID uid, @Valid @RequestBody List<UUID> fileUids) throws Exception {
+    List<SWFileInfo> result = npiOrderService.deleteNpiOrderFiles(uid, fileUids);
+    return new ResponseEntity<>(result, HttpStatus.OK);
+  }
+
+  @Secured({
+    UserRole.SecurityConstants.ADMINISTRATOR,
+    UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
+  })
   @PostMapping("/archived/export")
   public ResponseEntity<byte[]> exportArchivedNpiReport() throws IOException {
     byte[] fileBytes = npiOrderService.exportArchivedNpiOrder();
@@ -153,67 +205,5 @@ public class NpiOrderController {
             MediaType.parseMediaType(
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
         .body(fileBytes);
-  }
-
-  @Secured({
-    UserRole.SecurityConstants.ADMINISTRATOR,
-    UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
-  })
-  @GetMapping("/{uid}/process/lines/{lineUid}/files")
-  public ResponseEntity<List<SWFileInfo>> retrieveProcessLineFilesMetadata(
-      @PathVariable UUID uid, @PathVariable UUID lineUid) {
-    List<SWFileInfo> result = npiOrderService.retrieveProcessLineFilesMetadata(uid, lineUid);
-    return new ResponseEntity<>(result, HttpStatus.OK);
-  }
-
-  @Secured({
-    UserRole.SecurityConstants.ADMINISTRATOR,
-    UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
-  })
-  @PostMapping("/{uid}/process/lines/{lineUid}/upload")
-  public ResponseEntity<List<SWFileInfo>> uploadProcessLineFiles(
-      @PathVariable UUID uid,
-      @PathVariable UUID lineUid,
-      @RequestParam("files") MultipartFile[] files)
-      throws Exception {
-    List<SWFileInfo> result = npiOrderService.uploadProcessLineFiles(uid, lineUid, files);
-    return new ResponseEntity<>(result, HttpStatus.OK);
-  }
-
-  @Secured({
-    UserRole.SecurityConstants.ADMINISTRATOR,
-    UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
-  })
-  @PostMapping("/{uid}/process/lines/{lineUid}/download")
-  public ResponseEntity<org.springframework.core.io.Resource> downloadProcessLineFiles(
-      @PathVariable UUID uid,
-      @PathVariable UUID lineUid,
-      @Valid @RequestBody List<UUID> fileUids)
-      throws Exception {
-    org.springframework.core.io.Resource resource =
-        npiOrderService.downloadProcessLineFiles(uid, lineUid, fileUids);
-    String mimeType = Files.probeContentType(resource.getFile().toPath());
-    if (mimeType == null) {
-      mimeType = "application/octet-stream";
-    }
-    String encodedFilename = UriUtils.encode(resource.getFilename(), StandardCharsets.UTF_8);
-    return ResponseEntity.ok()
-        .contentType(MediaType.parseMediaType(mimeType))
-        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedFilename)
-        .body(resource);
-  }
-
-  @Secured({
-    UserRole.SecurityConstants.ADMINISTRATOR,
-    UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
-  })
-  @PostMapping("/{uid}/process/lines/{lineUid}/delete")
-  public ResponseEntity<List<SWFileInfo>> deleteProcessLineFiles(
-      @PathVariable UUID uid,
-      @PathVariable UUID lineUid,
-      @Valid @RequestBody List<UUID> fileUids)
-      throws Exception {
-    List<SWFileInfo> result = npiOrderService.deleteProcessLineFiles(uid, lineUid, fileUids);
-    return new ResponseEntity<>(result, HttpStatus.OK);
   }
 }

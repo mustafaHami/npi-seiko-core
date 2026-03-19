@@ -32,6 +32,10 @@ public class FileInfoEntity {
   @JoinColumn(name = "process_line_id")
   private ProcessLineEntity processLine;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "npi_order_id")
+  private NpiOrderEntity npiOrder;
+
   @Column(nullable = false, name = "index_id")
   private int indexId;
 }

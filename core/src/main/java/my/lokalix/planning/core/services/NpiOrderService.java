@@ -282,6 +282,48 @@ public class NpiOrderService {
   }
 
   @Transactional
+  public List<SWFileInfo> retrieveNpiOrderFilesMetadata(UUID npiOrderUid) {
+    NpiOrderEntity npiOrder = entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
+    return fileMapper.toListFileMetadata(npiOrder.getAttachedFiles());
+  }
+
+  @Transactional
+  public List<SWFileInfo> uploadNpiOrderFiles(UUID npiOrderUid, MultipartFile[] files)
+      throws Exception {
+    NpiOrderEntity npiOrder = entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
+    List<String> filesAdded =
+        fileHelper.uploadFiles(
+            files,
+            appConfigurationProperties.getNpiOrderFilesPathDirectory() + npiOrder.getNpiOrderId(),
+            GlobalConstants.ALLOWED_FILE_EXTENSIONS);
+    fileHelper.addFilesInAttachedFilesListInEntity(npiOrder, filesAdded, FileType.ANY);
+    npiOrderRepository.save(npiOrder);
+    return fileMapper.toListFileMetadata(npiOrder.getAttachedFiles());
+  }
+
+  @Transactional
+  public Resource downloadNpiOrderFiles(UUID npiOrderUid, List<UUID> fileUids) throws Exception {
+    NpiOrderEntity npiOrder = entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
+    return fileHelper.downloadFile(
+        appConfigurationProperties.getNpiOrderFilesPathDirectory() + npiOrder.getNpiOrderId(),
+        fileHelper.fileUidsToFileNames(fileUids),
+        GlobalConstants.ZIP_FILE);
+  }
+
+  @Transactional
+  public List<SWFileInfo> deleteNpiOrderFiles(UUID npiOrderUid, List<UUID> fileUids)
+      throws Exception {
+    NpiOrderEntity npiOrder = entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
+    List<Path> validPaths =
+        fileHelper.deleteMultipleFiles(
+            appConfigurationProperties.getNpiOrderFilesPathDirectory() + npiOrder.getNpiOrderId(),
+            fileHelper.fileUidsToFileNames(fileUids));
+    fileHelper.deleteFilesInAttachedFilesListInEntity(npiOrder, validPaths, FileType.ANY);
+    npiOrderRepository.save(npiOrder);
+    return fileMapper.toListFileMetadata(npiOrder.getAttachedFiles());
+  }
+
+  @Transactional
   public List<SWFileInfo> retrieveProcessLineFilesMetadata(UUID npiOrderUid, UUID lineUid) {
     entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
     ProcessLineEntity line = entityRetrievalHelper.getMustExistProcessLineById(lineUid);

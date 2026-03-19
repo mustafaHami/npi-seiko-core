@@ -12,6 +12,7 @@ import lombok.Getter;
 import lombok.Setter;
 import my.lokalix.planning.core.models.enums.NpiOrderStatus;
 import my.lokalix.planning.core.models.enums.ProcessLineStatus;
+import my.lokalix.planning.core.models.interfaces.FileInterface;
 import my.lokalix.planning.core.utils.TimeUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -21,7 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 @Entity
 @Table(name = "npi_order")
 @EqualsAndHashCode(of = "npiOrderId")
-public class NpiOrderEntity {
+public class NpiOrderEntity implements FileInterface {
 
   @Setter(AccessLevel.NONE)
   @Id
@@ -87,6 +88,28 @@ public class NpiOrderEntity {
   @OneToMany(mappedBy = "npiOrder", cascade = CascadeType.ALL, orphanRemoval = true)
   @OrderBy("indexId ASC")
   private List<ProcessLineEntity> processLines = new ArrayList<>();
+
+  @OneToMany(mappedBy = "npiOrder", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OrderBy("indexId ASC")
+  private List<FileInfoEntity> attachedFiles = new ArrayList<>();
+
+  public void addAttachedFile(FileInfoEntity fileInfoEntity) {
+    fileInfoEntity.setIndexId(attachedFiles.size());
+    fileInfoEntity.setNpiOrder(this);
+    attachedFiles.add(fileInfoEntity);
+  }
+
+  public void removeAttachedFile(FileInfoEntity file) {
+    attachedFiles.remove(file);
+    file.setNpiOrder(null);
+    reindexAttachedFiles();
+  }
+
+  private void reindexAttachedFiles() {
+    for (int i = 0; i < attachedFiles.size(); i++) {
+      attachedFiles.get(i).setIndexId(i);
+    }
+  }
 
   public void manageNpiStatusBasedProcessLinesStatus() {
     if (CollectionUtils.isEmpty(processLines)) return;
