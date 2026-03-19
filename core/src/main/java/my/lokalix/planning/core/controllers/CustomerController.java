@@ -22,6 +22,8 @@ public class CustomerController {
   private final CustomerService customerService;
 
   @Secured({
+    UserRole.SecurityConstants.ENGINEERING,
+    UserRole.SecurityConstants.PROCUREMENT,
     UserRole.SecurityConstants.ADMINISTRATOR,
     UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })
@@ -56,6 +58,8 @@ public class CustomerController {
   }
 
   @Secured({
+    UserRole.SecurityConstants.ENGINEERING,
+    UserRole.SecurityConstants.PROCUREMENT,
     UserRole.SecurityConstants.ADMINISTRATOR,
     UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })
