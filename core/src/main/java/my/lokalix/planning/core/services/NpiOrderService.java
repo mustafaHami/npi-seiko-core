@@ -170,6 +170,7 @@ public class NpiOrderService {
     NpiOrderEntity npiOrder = entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
     ProcessLineEntity line = entityRetrievalHelper.getMustExistProcessLineById(lineUid);
     npiValidator.validateNpiUpdatable(npiOrder);
+    processLineValidator.validateRoleForProcessLine(line);
     processLineValidator.validateStatusUpdate(line, body, npiOrder);
 
     ProcessLineStatus newStatus = ProcessLineStatus.fromValue(body.getStatus().getValue());
@@ -331,6 +332,7 @@ public class NpiOrderService {
       UUID npiOrderUid, UUID lineUid, MultipartFile[] files) throws Exception {
     entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
     ProcessLineEntity line = entityRetrievalHelper.getMustExistProcessLineById(lineUid);
+    processLineValidator.validateRoleForProcessLine(line);
     List<String> filesAdded =
         fileHelper.uploadFiles(
             files,
@@ -357,6 +359,7 @@ public class NpiOrderService {
       UUID npiOrderUid, UUID lineUid, List<UUID> fileUids) throws Exception {
     entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
     ProcessLineEntity line = entityRetrievalHelper.getMustExistProcessLineById(lineUid);
+    processLineValidator.validateRoleForProcessLine(line);
     List<Path> validPaths =
         fileHelper.deleteMultipleFiles(
             appConfigurationProperties.getProcessLineFilesPathDirectory() + line.getProcessLineId(),
@@ -491,6 +494,7 @@ public class NpiOrderService {
       UUID npiOrderUid, UUID lineUid, SWProcessLineRemainingTimeUpdate body) {
     NpiOrderEntity npiOrder = entityRetrievalHelper.getMustExistNpiOrderById(npiOrderUid);
     ProcessLineEntity line = entityRetrievalHelper.getMustExistProcessLineById(lineUid);
+    processLineValidator.validateRoleForProcessLine(line);
     processLineValidator.validateRemainingTimeUpdate(line);
     BigDecimal previousRemainingTimeInDays = line.getRemainingTimeInDays();
     line.setRemainingTimeInDays(body.getRemainingTimeInDays());
@@ -516,6 +520,7 @@ public class NpiOrderService {
       throw new GenericWithMessageException(
           "This step is not a material purchase step", SWCustomErrorCode.GENERIC_ERROR);
     }
+    processLineValidator.validateRoleForProcessLine(line);
     npiValidator.validateNpiMaterialDeliveryDateFileConfig(body);
     FileInfoEntity fileInfo = entityRetrievalHelper.getMustExistFileEntity(body.getFileUid());
     String filePath =
