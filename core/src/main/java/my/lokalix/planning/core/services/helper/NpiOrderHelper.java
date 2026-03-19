@@ -298,27 +298,62 @@ public class NpiOrderHelper {
     LocalDate today = TimeUtils.nowLocalDate(appConfigurationProperties.getAppTimezone());
     LocalDate baseDate = resolveBaseDate(npiOrder, allLines, today);
 
-    BigDecimal totalForecastDays = BigDecimal.valueOf(0);
+    // Phase 1: accumulate days for all steps except customer approval when IN_PROGRESS
+    // (customer approval IN_PROGRESS has its own fixed anchor date)
+    BigDecimal phase1Days = BigDecimal.valueOf(0);
+    ProcessLineEntity customerApprovalInProgress = null;
+
     for (ProcessLineEntity line : allLines) {
       if (Boolean.TRUE.equals(line.getIsMaterialPurchase())) {
-        continue; // material purchase is a date, not a duration
+        continue; // material purchase is a fixed date, not a duration
       }
       ProcessLineStatus status = line.getStatus();
       BigDecimal remainingTimeInDays = line.getRemainingTimeInDays();
       BigDecimal planTimeInDays = line.getPlanTimeInDays();
 
+      if (Boolean.TRUE.equals(line.getIsCustomerApproval())
+          && status == ProcessLineStatus.IN_PROGRESS) {
+        customerApprovalInProgress = line;
+        continue; // handled separately in phase 2
+      }
+
       if (status == ProcessLineStatus.IN_PROGRESS) {
-        BigDecimal timeToAdd =
-            remainingTimeInDays != null ? remainingTimeInDays : planTimeInDays;
+        BigDecimal timeToAdd = remainingTimeInDays != null ? remainingTimeInDays : planTimeInDays;
         if (timeToAdd != null) {
-          totalForecastDays = totalForecastDays.add(timeToAdd);
+          phase1Days = phase1Days.add(timeToAdd);
         }
       } else if (status == ProcessLineStatus.NOT_STARTED && planTimeInDays != null) {
-        totalForecastDays = totalForecastDays.add(planTimeInDays);
+        phase1Days = phase1Days.add(planTimeInDays);
       }
     }
-    long forecastDays = totalForecastDays.setScale(0, RoundingMode.CEILING).longValue();
-    npiOrder.setForecastDeliveryDate(TimeUtils.addBusinessDays(baseDate, forecastDays));
+
+    long phase1DaysLong = phase1Days.setScale(0, RoundingMode.CEILING).longValue();
+    LocalDate endDateAfterPhase1 = TimeUtils.addBusinessDays(baseDate, phase1DaysLong);
+
+    // Phase 2: customer approval IN_PROGRESS — starts at the later of endDateAfterPhase1
+    // and its own anchor date (startingCustomerApprovalDate or today)
+    if (customerApprovalInProgress != null) {
+      LocalDate startingApprovalDate = customerApprovalInProgress.getStartingCustomerApprovalDate();
+      LocalDate approvalAnchor =
+          (startingApprovalDate != null && startingApprovalDate.isAfter(today))
+              ? startingApprovalDate
+              : today;
+      LocalDate customerApprovalStart =
+          approvalAnchor.isAfter(endDateAfterPhase1) ? approvalAnchor : endDateAfterPhase1;
+
+      BigDecimal approvalRemaining = customerApprovalInProgress.getRemainingTimeInDays() != null
+          ? customerApprovalInProgress.getRemainingTimeInDays()
+          : customerApprovalInProgress.getPlanTimeInDays();
+      long approvalRemainingLong = approvalRemaining != null
+          ? approvalRemaining.setScale(0, RoundingMode.CEILING).longValue()
+          : 0;
+
+      npiOrder.setForecastDeliveryDate(
+          TimeUtils.addBusinessDays(customerApprovalStart, approvalRemainingLong));
+    } else {
+      npiOrder.setForecastDeliveryDate(endDateAfterPhase1);
+    }
+
     npiOrderRepository.save(npiOrder);
   }
 
