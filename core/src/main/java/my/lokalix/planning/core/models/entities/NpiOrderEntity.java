@@ -69,6 +69,10 @@ public class NpiOrderEntity {
   @Column(columnDefinition = "TEXT")
   private String customerRejectReason;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "customer_id")
+  private CustomerEntity customer;
+
   private OffsetDateTime statusDate;
 
   @Column(nullable = false)
@@ -159,8 +163,9 @@ public class NpiOrderEntity {
     if (StringUtils.isNotBlank(partNumber)) {
       sb.append(partNumber).append(" ");
     }
-    if (StringUtils.isNotBlank(customerName)) {
-      sb.append(customerName).append(" ");
+    if (customer != null) {
+      sb.append(customer.getCode());
+      sb.append(" ");
     }
     if (StringUtils.isNotBlank(productName)) {
       sb.append(productName).append(" ");

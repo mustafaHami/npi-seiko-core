@@ -18,11 +18,7 @@ import my.lokalix.planning.core.mappers.FileMapper;
 import my.lokalix.planning.core.mappers.NpiOrderMapper;
 import my.lokalix.planning.core.mappers.ProcessLineMapper;
 import my.lokalix.planning.core.mappers.ProcessLineStatusHistoryMapper;
-import my.lokalix.planning.core.models.entities.FileInfoEntity;
-import my.lokalix.planning.core.models.entities.NpiOrderEntity;
-import my.lokalix.planning.core.models.entities.ProcessEntity;
-import my.lokalix.planning.core.models.entities.ProcessLineEntity;
-import my.lokalix.planning.core.models.entities.ProcessLineStatusHistoryEntity;
+import my.lokalix.planning.core.models.entities.*;
 import my.lokalix.planning.core.models.enums.FileType;
 import my.lokalix.planning.core.models.enums.NpiOrderStatus;
 import my.lokalix.planning.core.models.enums.ProcessLineStatus;
@@ -33,6 +29,7 @@ import my.lokalix.planning.core.repositories.ProcessRepository;
 import my.lokalix.planning.core.security.LoggedUserDetailsService;
 import my.lokalix.planning.core.services.helper.EntityRetrievalHelper;
 import my.lokalix.planning.core.services.helper.FileHelper;
+import my.lokalix.planning.core.services.helper.NpiOrderArchivingHelper;
 import my.lokalix.planning.core.services.helper.NpiOrderHelper;
 import my.lokalix.planning.core.services.validator.NpiValidator;
 import my.lokalix.planning.core.services.validator.ProcessLineValidator;
@@ -68,6 +65,7 @@ public class NpiOrderService {
   private final ProcessLineRepository processLineRepository;
   private final ProcessLineStatusHistoryRepository processLineStatusHistoryRepository;
   private final EntityRetrievalHelper entityRetrievalHelper;
+  private final NpiOrderArchivingHelper npiOrderArchivingHelper;
   private final ProcessLineValidator processLineValidator;
   private final AppConfigurationProperties appConfigurationProperties;
   private final NpiValidator npiValidator;
@@ -83,6 +81,11 @@ public class NpiOrderService {
     }
 
     NpiOrderEntity entity = npiOrderMapper.toNpiOrderEntity(body);
+    if (body.getCustomerId() != null) {
+      CustomerEntity customer =
+          entityRetrievalHelper.getMustExistCustomerById(body.getCustomerId());
+      entity.setCustomer(customer);
+    }
     buildProcessLines(entity, processes, body);
     calculateAndSetDeliveryDates(entity);
     NpiOrderEntity savedEntity = npiOrderRepository.save(entity);
@@ -105,7 +108,11 @@ public class NpiOrderService {
           SWCustomErrorCode.GENERIC_ERROR);
     }
     npiOrderMapper.updateNpiOrderEntityFromDto(body, entity);
-
+    if (body.getCustomerId() != null) {
+      CustomerEntity customer =
+          entityRetrievalHelper.getMustExistCustomerById(body.getCustomerId());
+      entity.setCustomer(customer);
+    }
     entity
         .getProcessLines()
         .forEach(
@@ -144,6 +151,7 @@ public class NpiOrderService {
     }
     entity.setStatus(NpiOrderStatus.ABORTED);
     entity.setStatusDate(TimeUtils.nowOffsetDateTimeUTC());
+    npiOrderArchivingHelper.archiveCostRequestDataFreeze(entity);
     return npiOrderMapper.toSWNpiOrder(npiOrderRepository.save(entity));
   }
 
@@ -216,6 +224,9 @@ public class NpiOrderService {
     npiOrderRepository.save(npiOrder);
     if (newStatus != ProcessLineStatus.ABORTED) {
       npiOrder.manageNpiStatusBasedProcessLinesStatus();
+      if (npiOrder.getStatus().equals(NpiOrderStatus.COMPLETED)) {
+        npiOrderArchivingHelper.archiveCostRequestDataFreeze(npiOrder);
+      }
     }
 
     return processLineMapper.toListSWProcessLine(npiOrder.getProcessLines());

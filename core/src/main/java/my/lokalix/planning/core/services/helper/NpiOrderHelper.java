@@ -23,7 +23,6 @@ import my.lokalix.planning.core.repositories.ProcessLineRepository;
 import my.lokalix.planning.core.utils.ExcelUtils;
 import my.lokalix.planning.core.utils.TimeUtils;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -146,7 +145,7 @@ public class NpiOrderHelper {
     ExcelUtils.createAndStyleCellLeftAlignment(
         row,
         col++,
-        StringUtils.isNotBlank(npi.getCustomerName()) ? npi.getCustomerName() : null,
+        npi.getCustomer() != null ? npi.getCustomer().getCode() : null,
         CellStyleFormatEnum.STRING,
         CellColorEnum.WHITE,
         styles);

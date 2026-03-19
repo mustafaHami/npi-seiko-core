@@ -12,7 +12,8 @@ import org.mapstruct.*;
 
 @Mapper(
     componentModel = MappingConstants.ComponentModel.SPRING,
-    unmappedTargetPolicy = ReportingPolicy.IGNORE)
+    unmappedTargetPolicy = ReportingPolicy.IGNORE,
+    uses = {ProcessLineMapper.class, EnumMapper.class, CustomerMapper.class})
 public abstract class NpiOrderMapper {
 
   @Mapping(target = "status", ignore = true)

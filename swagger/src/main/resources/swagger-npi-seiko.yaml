@@ -19,7 +19,171 @@ tags:
     description: Everything about User APIs
   - name: files
     description: Everything about Files APIs
+  - name: customer
+    description: Everything about Customer APIs
 paths:
+  /customers/search:
+    post:
+      tags:
+        - customer
+      summary: |
+        Search customers with filter:
+        - freetext looking at name/code
+        Return paginated data ordered alphabetically
+      operationId: searchCustomers
+      parameters:
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/limitParam'
+      requestBody:
+        description: search customers
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BasicSearch'
+        required: true
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomersPaginated"
+  /customers/{uid}:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    get:
+      tags:
+        - customer
+      summary: Retrieve a customer
+      operationId: retrieveCustomer
+      responses:
+        '200':
+          description: customer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+    put:
+      tags:
+        - customer
+      summary: Update a customer
+      operationId: updateCustomer
+      requestBody:
+        description: update customer object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerUpdate'
+        required: true
+      responses:
+        '200':
+          description: object updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+  /customers:
+    get:
+      tags:
+        - customer
+      summary: List all customers
+      operationId: listAllCustomers
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Customer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    post:
+      tags:
+        - customer
+      summary: Create a new customer
+      operationId: createCustomer
+      requestBody:
+        description: New customer
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerCreate'
+        required: true
+      responses:
+        '201':
+          description: object created
+          headers:
+            Uid:
+              schema:
+                $ref: '#/components/schemas/Uid'
+              description: uid of the created object.
+  /customers/{uid}/archive:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    post:
+      tags:
+        - customer
+      summary: Archive a customer
+      operationId: archiveCustomer
+      responses:
+        '200':
+          description: successful operation
+  /customers/{uid}/requestor-names:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    get:
+      tags:
+        - customer
+      summary: retrieve requestor names from customer
+      operationId: retrieveRequestorNames
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+    put:
+      tags:
+        - customer
+      summary: set requestor names to customer
+      operationId: setRequestorNames
+      requestBody:
+        description: requestor names
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+        required: true
+      responses:
+        '200':
+          description: successful operation
+  /customers/{uid}/add-requestor-names:
+    parameters:
+      - $ref: '#/components/parameters/uidParam'
+    post:
+      tags:
+        - customer
+      summary: add requestor names to customer
+      operationId: addRequestorNames
+      requestBody:
+        description: requestor names
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+        required: true
+      responses:
+        '200':
+          description: successful operation
   /dashboard:
     get:
       tags:
@@ -989,6 +1153,51 @@ components:
   ##################################################################
   ##################################################################
   schemas:
+    CustomersPaginated:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/PaginationInfos"
+        - type: object
+          required:
+            - results
+          properties:
+            results:
+              type: array
+              items:
+                $ref: "#/components/schemas/Customer"
+    CustomerCreate:
+      type: object
+      required:
+        - name
+        - code
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+    CustomerUpdate:
+      type: object
+      required:
+        - name
+        - code
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+    Customer:
+      type: object
+      required:
+        - uid
+        - name
+        - code
+      properties:
+        uid:
+          $ref: '#/components/schemas/Uid'
+        name:
+          type: string
+        code:
+          type: string
     Dashboard:
       type: object
       properties:
@@ -1461,8 +1670,8 @@ components:
         targetDeliveryDate:
           type: string
           format: date
-        customerName:
-          type: string
+        customerId:
+          $ref: '#/components/schemas/Uid'
         productName:
           type: string
         materialPurchasePlanTimeInDays:
@@ -1505,8 +1714,8 @@ components:
         targetDeliveryDate:
           type: string
           format: date
-        customerName:
-          type: string
+        customerId:
+          $ref: '#/components/schemas/Uid'
         productName:
           type: string
         materialPurchasePlanTimeInDays:
@@ -1558,8 +1767,8 @@ components:
         targetDeliveryDate:
           type: string
           format: date
-        customerName:
-          type: string
+        customer:
+          $ref: '#/components/schemas/Customer'
         productName:
           type: string
         materialPurchasePlanTimeInDays:

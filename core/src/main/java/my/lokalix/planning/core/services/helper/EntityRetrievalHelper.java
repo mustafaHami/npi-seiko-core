@@ -21,13 +21,14 @@ public class EntityRetrievalHelper {
   private final ProcessRepository processRepository;
   private final ProcessLineRepository processLineRepository;
   private final ProcessLineStatusHistoryRepository processLineStatusHistoryRepository;
-
+  private final CustomerRepository customerRepository;
 
   public FileInfoEntity getMustExistFileEntity(UUID uuid) {
     return fileRepository
         .findById(uuid)
         .orElseThrow(() -> new EntityNotFoundException("File not found"));
   }
+
   public NpiOrderEntity getMustExistNpiOrderById(UUID uuid) {
     return npiOrderRepository
         .findById(uuid)
@@ -50,5 +51,11 @@ public class EntityRetrievalHelper {
     return processLineStatusHistoryRepository
         .findById(uuid)
         .orElseThrow(() -> new EntityNotFoundException("Process line status history not found"));
+  }
+
+  public CustomerEntity getMustExistCustomerById(UUID uuid) {
+    return customerRepository
+        .findById(uuid)
+        .orElseThrow(() -> new EntityNotFoundException("Customer not found"));
   }
 }
