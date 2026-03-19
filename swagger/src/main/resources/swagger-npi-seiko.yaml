@@ -1475,6 +1475,8 @@ components:
     UserRole:
       type: string
       enum:
+        - ENGINEERING
+        - PROCUREMENT
         - ADMINISTRATOR
         - SUPER_ADMINISTRATOR
     FileType:

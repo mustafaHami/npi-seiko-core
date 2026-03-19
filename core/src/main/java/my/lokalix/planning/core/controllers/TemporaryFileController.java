@@ -29,6 +29,8 @@ public class TemporaryFileController {
   private final TemporaryFileService temporaryFileService;
 
   @Secured({
+    UserRole.SecurityConstants.ENGINEERING,
+    UserRole.SecurityConstants.PROCUREMENT,
     UserRole.SecurityConstants.ADMINISTRATOR,
     UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })
@@ -39,6 +41,8 @@ public class TemporaryFileController {
   }
 
   @Secured({
+    UserRole.SecurityConstants.ENGINEERING,
+    UserRole.SecurityConstants.PROCUREMENT,
     UserRole.SecurityConstants.ADMINISTRATOR,
     UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })
@@ -50,6 +54,8 @@ public class TemporaryFileController {
   }
 
   @Secured({
+    UserRole.SecurityConstants.ENGINEERING,
+    UserRole.SecurityConstants.PROCUREMENT,
     UserRole.SecurityConstants.ADMINISTRATOR,
     UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })

@@ -34,6 +34,8 @@ public class NpiOrderController {
   private final AppConfigurationProperties appConfigurationProperties;
 
   @Secured({
+    UserRole.SecurityConstants.ENGINEERING,
+    UserRole.SecurityConstants.PROCUREMENT,
     UserRole.SecurityConstants.ADMINISTRATOR,
     UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })
@@ -45,6 +47,8 @@ public class NpiOrderController {
   }
 
   @Secured({
+    UserRole.SecurityConstants.ENGINEERING,
+    UserRole.SecurityConstants.PROCUREMENT,
     UserRole.SecurityConstants.ADMINISTRATOR,
     UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })
@@ -55,6 +59,8 @@ public class NpiOrderController {
   }
 
   @Secured({
+    UserRole.SecurityConstants.ENGINEERING,
+    UserRole.SecurityConstants.PROCUREMENT,
     UserRole.SecurityConstants.ADMINISTRATOR,
     UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })
@@ -66,6 +72,8 @@ public class NpiOrderController {
   }
 
   @Secured({
+    UserRole.SecurityConstants.ENGINEERING,
+    UserRole.SecurityConstants.PROCUREMENT,
     UserRole.SecurityConstants.ADMINISTRATOR,
     UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })
@@ -81,6 +89,8 @@ public class NpiOrderController {
   }
 
   @Secured({
+    UserRole.SecurityConstants.ENGINEERING,
+    UserRole.SecurityConstants.PROCUREMENT,
     UserRole.SecurityConstants.ADMINISTRATOR,
     UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })
@@ -91,6 +101,8 @@ public class NpiOrderController {
   }
 
   @Secured({
+    UserRole.SecurityConstants.ENGINEERING,
+    UserRole.SecurityConstants.PROCUREMENT,
     UserRole.SecurityConstants.ADMINISTRATOR,
     UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })
@@ -101,8 +113,10 @@ public class NpiOrderController {
   }
 
   @Secured({
+    UserRole.SecurityConstants.ENGINEERING,
+    UserRole.SecurityConstants.PROCUREMENT,
     UserRole.SecurityConstants.ADMINISTRATOR,
-    UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
+    UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })
   @PostMapping("/open/export")
   public ResponseEntity<byte[]> exportOpenNpiOrder() throws IOException {
@@ -129,8 +143,10 @@ public class NpiOrderController {
   }
 
   @Secured({
+    UserRole.SecurityConstants.ENGINEERING,
+    UserRole.SecurityConstants.PROCUREMENT,
     UserRole.SecurityConstants.ADMINISTRATOR,
-    UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
+    UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })
   @GetMapping("/{uid}/files")
   public ResponseEntity<List<SWFileInfo>> retrieveNpiOrderFilesMetadata(@PathVariable UUID uid) {
@@ -139,8 +155,10 @@ public class NpiOrderController {
   }
 
   @Secured({
+    UserRole.SecurityConstants.ENGINEERING,
+    UserRole.SecurityConstants.PROCUREMENT,
     UserRole.SecurityConstants.ADMINISTRATOR,
-    UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
+    UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })
   @PostMapping("/{uid}/files/upload")
   public ResponseEntity<List<SWFileInfo>> uploadNpiOrderFiles(
@@ -150,8 +168,10 @@ public class NpiOrderController {
   }
 
   @Secured({
+    UserRole.SecurityConstants.ENGINEERING,
+    UserRole.SecurityConstants.PROCUREMENT,
     UserRole.SecurityConstants.ADMINISTRATOR,
-    UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
+    UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })
   @PostMapping("/{uid}/files/download")
   public ResponseEntity<org.springframework.core.io.Resource> downloadNpiOrderFiles(
@@ -170,8 +190,10 @@ public class NpiOrderController {
   }
 
   @Secured({
+    UserRole.SecurityConstants.ENGINEERING,
+    UserRole.SecurityConstants.PROCUREMENT,
     UserRole.SecurityConstants.ADMINISTRATOR,
-    UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
+    UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })
   @PostMapping("/{uid}/files/delete")
   public ResponseEntity<List<SWFileInfo>> deleteNpiOrderFiles(
@@ -181,8 +203,10 @@ public class NpiOrderController {
   }
 
   @Secured({
+    UserRole.SecurityConstants.ENGINEERING,
+    UserRole.SecurityConstants.PROCUREMENT,
     UserRole.SecurityConstants.ADMINISTRATOR,
-    UserRole.SecurityConstants.SUPER_ADMINISTRATOR,
+    UserRole.SecurityConstants.SUPER_ADMINISTRATOR
   })
   @PostMapping("/archived/export")
   public ResponseEntity<byte[]> exportArchivedNpiReport() throws IOException {
